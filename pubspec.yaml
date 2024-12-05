@@ -1,0 +1,25 @@
+name: vision_assist
+description: "A new Flutter project."
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  image_picker: ^1.1.2
+  cupertino_icons: ^1.0.8
+  google_mlkit_text_recognition: ^0.14.0  # Only use the ML Kit text recognition package
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/  # Only keep assets you need, remove tessdata if you're not using Tesseract
