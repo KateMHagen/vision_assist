@@ -1,6 +1,6 @@
 # vision_assist
 
-A new Flutter project.
+----------------------- run `flutter pub get` to fetch dependencies! -----------------------
 
 ## Getting Started
 
