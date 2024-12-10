@@ -23,28 +23,35 @@ class _GPSPageState extends State<GPSPage> {
     _initializeLocation();
   }
 
+  /// Initializes the location by checking permissions and fetching the user's current position.
   Future<void> _initializeLocation() async {
+    setState(() => _isLoading = true);
+
     try {
+      // Ensure location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         await Geolocator.openLocationSettings();
+        _showErrorDialog('Please enable location services to use GPS features.');
         return;
       }
 
+      // Request location permissions if necessary
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          _showErrorDialog('Location permissions are denied');
+          _showErrorDialog('Location permissions are denied.');
           return;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        _showErrorDialog('Location permissions are permanently denied');
+        _showErrorDialog('Location permissions are permanently denied. Enable them in settings.');
         return;
       }
 
+      // Fetch the current position
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
@@ -54,13 +61,12 @@ class _GPSPageState extends State<GPSPage> {
         _isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
       _showErrorDialog('Error getting location: $e');
     }
   }
 
+  /// Displays an error dialog with the provided message.
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -77,17 +83,19 @@ class _GPSPageState extends State<GPSPage> {
     );
   }
 
+  /// Searches for a location based on the user query and updates the map with results.
   Future<void> _searchLocation(String query) async {
     if (query.isEmpty) return;
 
     if (_currentPosition == null) {
-    _showErrorDialog('Current location is not available.');
-    return;
+      _showErrorDialog('Current location is not available.');
+      return;
     }
 
     try {
       LatLng currentLatLng = LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
 
+      // Call API to search for places
       final results = await ApiService.searchPlaces(query, currentLatLng);
 
       setState(() {
@@ -117,6 +125,7 @@ class _GPSPageState extends State<GPSPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Show a loading spinner while initializing
     if (_isLoading) {
       return const Scaffold(
         body: Center(
@@ -125,6 +134,7 @@ class _GPSPageState extends State<GPSPage> {
       );
     }
 
+    // Handle case where location could not be retrieved
     if (_currentPosition == null) {
       return Scaffold(
         body: const Center(
@@ -133,6 +143,7 @@ class _GPSPageState extends State<GPSPage> {
       );
     }
 
+    // Main GPS page layout
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Location'),
