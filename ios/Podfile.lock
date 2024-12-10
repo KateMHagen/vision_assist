@@ -1,5 +1,13 @@
 PODS:
   - Flutter (1.0.0)
+  - geolocator_apple (1.2.0):
+    - Flutter
+  - Google-Maps-iOS-Utils (6.1.0):
+    - GoogleMaps (~> 9.0)
+  - google_maps_flutter_ios (0.0.1):
+    - Flutter
+    - Google-Maps-iOS-Utils (< 7.0, >= 5.0)
+    - GoogleMaps (< 10.0, >= 8.4)
   - flutter_tts (0.0.1):
     - Flutter
   - google_mlkit_commons (0.9.0):
@@ -12,6 +20,9 @@ PODS:
   - GoogleDataTransport (10.1.0):
     - nanopb (~> 3.30910.0)
     - PromisesObjC (~> 2.4)
+  - GoogleMaps (9.2.0):
+    - GoogleMaps/Maps (= 9.2.0)
+  - GoogleMaps/Maps (9.2.0)
   - GoogleMLKit/MLKitCore (7.0.0):
     - MLKitCommon (~> 12.0.0)
   - GoogleMLKit/TextRecognition (7.0.0):
@@ -68,10 +79,14 @@ DEPENDENCIES:
   - google_mlkit_commons (from `.symlinks/plugins/google_mlkit_commons/ios`)
   - google_mlkit_text_recognition (from `.symlinks/plugins/google_mlkit_text_recognition/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
+  - geolocator_apple (from `.symlinks/plugins/geolocator_apple/ios`)
+  - google_maps_flutter_ios (from `.symlinks/plugins/google_maps_flutter_ios/ios`)
 
 SPEC REPOS:
   trunk:
+    - Google-Maps-iOS-Utils
     - GoogleDataTransport
+    - GoogleMaps
     - GoogleMLKit
     - GoogleToolboxForMac
     - GoogleUtilities
@@ -87,6 +102,7 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   Flutter:
     :path: Flutter
+
   flutter_tts:
     :path: ".symlinks/plugins/flutter_tts/ios"
   google_mlkit_commons:
@@ -95,13 +111,19 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/google_mlkit_text_recognition/ios"
   image_picker_ios:
     :path: ".symlinks/plugins/image_picker_ios/ios"
+  geolocator_apple:
+    :path: ".symlinks/plugins/geolocator_apple/ios"
+  google_maps_flutter_ios:
+    :path: ".symlinks/plugins/google_maps_flutter_ios/ios"
 
 SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+
   flutter_tts: 0f492aab6accf87059b72354fcb4ba934304771d
   google_mlkit_commons: 384e4e206e122b6dad430d3158205e0b2fac6789
   google_mlkit_text_recognition: e540f2aff997f2b0daaa1b4fd5ead3b0b7030adc
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
+  GoogleMaps: 634ec3ca99698b31ca2253d64f017217d70cfb38
   GoogleMLKit: eff9e23ec1d90ea4157a1ee2e32a4f610c5b3318
   GoogleToolboxForMac: d1a2cbf009c453f4d6ded37c105e2f67a32206d8
   GoogleUtilities: 26a3abef001b6533cf678d3eb38fd3f614b7872d
@@ -114,6 +136,10 @@ SPEC CHECKSUMS:
   MLKitVision: 45e79d68845a2de77e2dd4d7f07947f0ed157b0e
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
+  
+  geolocator_apple: 9bcea1918ff7f0062d98345d238ae12718acfbc1
+  Google-Maps-iOS-Utils: 0a484b05ed21d88c9f9ebbacb007956edd508a96
+  google_maps_flutter_ios: e31555a04d1986ab130f2b9f24b6cdc861acc6d3
 
 PODFILE CHECKSUM: fcbb6b2e4a912678ee8fa15581540bbdeda10a23
 

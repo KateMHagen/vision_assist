@@ -14,6 +14,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   google_mlkit_text_recognition: ^0.14.0  # Only use the ML Kit text recognition package
   flutter_tts: ^4.2.0
+  
+  google_maps_flutter: ^2.7.0
+  google_maps_flutter_web: ^0.5.4+3
+  google_maps_webservice: ^0.0.19
+  geolocator: ^13.0.2
+  http: ^0.13.6
 
 dev_dependencies:
   flutter_test:
@@ -22,5 +28,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/  # Only keep assets you need, remove tessdata if you're not using Tesseract
