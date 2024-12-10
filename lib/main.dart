@@ -15,6 +15,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
       
@@ -49,9 +50,6 @@ class _MyHomePageState extends State<MyHomePage> {
    Widget build(BuildContext context) {
     
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cross Platform App'),
-      ),
       body: _pages[selectedIndex],
       bottomNavigationBar: NavigationBar(
         onDestinationSelected: (int index) {
