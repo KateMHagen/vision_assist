@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:vision_assist/services/api_service.dart'; // Import ApiService
+import 'package:vision_assist/services/api_service.dart'; 
 
 class GPSPage extends StatefulWidget {
-  const GPSPage({Key? key}) : super(key: key);
-
   @override
   _GPSPageState createState() => _GPSPageState();
 }
@@ -15,75 +13,34 @@ class _GPSPageState extends State<GPSPage> {
   Position? _currentPosition;
   final TextEditingController _searchController = TextEditingController();
   final Set<Marker> _markers = {};
+  final Set<Polyline> _polylines = {};
+  LatLng? _selectedDestination;
   bool _isLoading = true;
+  bool _showNavigationButton = false; // Flag to control visibility of navigation button
 
   @override
   void initState() {
     super.initState();
-    _initializeLocation();
+    _getCurrentLocation();
   }
 
-  /// Initializes the location by checking permissions and fetching the user's current position.
-  Future<void> _initializeLocation() async {
-    setState(() => _isLoading = true);
-
+  Future<void> _getCurrentLocation() async {
     try {
-      // Ensure location services are enabled
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        await Geolocator.openLocationSettings();
-        _showErrorDialog('Please enable location services to use GPS features.');
-        return;
-      }
-
-      // Request location permissions if necessary
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          _showErrorDialog('Location permissions are denied.');
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        _showErrorDialog('Location permissions are permanently denied. Enable them in settings.');
-        return;
-      }
-
-      // Fetch the current position
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-
       setState(() {
         _currentPosition = position;
         _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
-      _showErrorDialog('Error getting location: $e');
+      setState(() {
+        _isLoading = false;
+      });
+      _showErrorDialog('Failed to retrieve current location: $e');
     }
   }
 
-  /// Displays an error dialog with the provided message.
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Error'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Searches for a location based on the user query and updates the map with results.
   Future<void> _searchLocation(String query) async {
     if (query.isEmpty) return;
 
@@ -100,15 +57,23 @@ class _GPSPageState extends State<GPSPage> {
 
       setState(() {
         _markers.clear(); // Clear previous markers
+        _polylines.clear(); // Clear any existing route lines
         results.forEach((latLng) {
           _markers.add(
             Marker(
               markerId: MarkerId(latLng.toString()),
               position: latLng,
               infoWindow: InfoWindow(title: query),
+              onTap: () {
+                setState(() {
+                  _selectedDestination = latLng; // Update selected destination
+                  _showNavigationButton = true; // Show the navigation button after a selection
+                });
+              },
             ),
           );
         });
+        _selectedDestination = null; // Clear destination if new search
       });
 
       if (results.isNotEmpty) {
@@ -123,9 +88,74 @@ class _GPSPageState extends State<GPSPage> {
     }
   }
 
+  Future<void> _getWalkingDirections(LatLng destination) async {
+    if (_currentPosition == null) {
+      _showErrorDialog('Current location is not available.');
+      return;
+    }
+
+    try {
+      LatLng origin = LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
+
+      // Call API to get directions
+      final polylinePoints = await ApiService.getWalkingDirections(origin, destination);
+
+      setState(() {
+        _polylines.clear();
+        _polylines.add(
+          Polyline(
+            polylineId: const PolylineId('walking_route'),
+            color: Colors.blue,
+            width: 5,
+            points: polylinePoints,
+          ),
+        );
+      });
+
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngBounds(
+          _getLatLngBounds(origin, destination),
+          100.0,
+        ),
+      );
+    } catch (e) {
+      _showErrorDialog("Error retrieving directions: $e");
+    }
+  }
+
+  LatLngBounds _getLatLngBounds(LatLng origin, LatLng destination) {
+    return LatLngBounds(
+      southwest: LatLng(
+        origin.latitude < destination.latitude ? origin.latitude : destination.latitude,
+        origin.longitude < destination.longitude ? origin.longitude : destination.longitude,
+      ),
+      northeast: LatLng(
+        origin.latitude > destination.latitude ? origin.latitude : destination.latitude,
+        origin.longitude > destination.longitude ? origin.longitude : destination.longitude,
+      ),
+    );
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Show a loading spinner while initializing
     if (_isLoading) {
       return const Scaffold(
         body: Center(
@@ -134,7 +164,6 @@ class _GPSPageState extends State<GPSPage> {
       );
     }
 
-    // Handle case where location could not be retrieved
     if (_currentPosition == null) {
       return Scaffold(
         body: const Center(
@@ -143,10 +172,9 @@ class _GPSPageState extends State<GPSPage> {
       );
     }
 
-    // Main GPS page layout
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Location'),
+        title: const Text('GPS Navigation'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(20.0),
           child: Container(
@@ -180,6 +208,18 @@ class _GPSPageState extends State<GPSPage> {
               },
             ),
           ),
+          // Display "Start Navigation" button only if destination is selected
+          if (_showNavigationButton && _selectedDestination != null)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  _getWalkingDirections(_selectedDestination!);
+                },
+                icon: const Icon(Icons.directions_walk),
+                label: const Text('Start Navigation'),
+              ),
+            ),
           Expanded(
             child: GoogleMap(
               initialCameraPosition: CameraPosition(
@@ -193,6 +233,7 @@ class _GPSPageState extends State<GPSPage> {
               myLocationEnabled: true,
               myLocationButtonEnabled: true,
               markers: _markers,
+              polylines: _polylines, // Add the polylines to the map
               onMapCreated: (GoogleMapController controller) {
                 _mapController = controller;
               },
@@ -201,12 +242,5 @@ class _GPSPageState extends State<GPSPage> {
         ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _mapController?.dispose();
-    _searchController.dispose();
-    super.dispose();
   }
 }
