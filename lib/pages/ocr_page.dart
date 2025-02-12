@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -53,17 +52,6 @@ class _OCRPageState extends State<OCRPage> {
         _isSpeaking = false;
       });
     });
-
-    // (Optional) Debug: print available languages and voices.
-    try {
-      List<dynamic>? languages = await _flutterTts.getLanguages;
-      print("Available languages: $languages");
-
-      List<dynamic>? voices = await _flutterTts.getVoices;
-      print("Available voices: $voices");
-    } catch (e) {
-      print("Error retrieving TTS languages/voices: $e");
-    }
   }
 
   Future<void> _initializeCamera() async {
@@ -136,12 +124,12 @@ class _OCRPageState extends State<OCRPage> {
       final recognizedText = await _textRecognizer.processImage(inputImage);
       final text = recognizedText.text.trim();
 
-      // Always update the UI with the latest recognized text.
+      // Update the UI with the latest recognized text.
       setState(() {
         _extractText = text;
       });
 
-      // Add the recognized text sample for aggregation.
+      // Add the full OCR text sample if it's not empty.
       if (text.isNotEmpty) {
         _textSamples.add(text);
       }
@@ -161,71 +149,34 @@ class _OCRPageState extends State<OCRPage> {
     return allBytes.done().buffer.asUint8List();
   }
 
-  /// Analyzes the collected OCR samples and speaks the most common (and clean) line.
+  /// Analyzes the collected OCR samples and speaks the most complete text.
   Future<void> _analyzeTextSamples() async {
     if (_textSamples.isEmpty) return;
 
-    // Build a list of individual lines from all samples.
-    List<String> allLines = [];
-    for (var sample in _textSamples) {
-      // Split by newline and trim.
-      List<String> lines = sample.split('\n')
-          .map((l) => l.trim())
-          .where((l) => l.isNotEmpty)
-          .toList();
-      allLines.addAll(lines);
+    // Filter out samples that are too short (e.g. less than 30 characters).
+    List<String> candidateTexts =
+        _textSamples.where((sample) => sample.length >= 30).toList();
+    if (candidateTexts.isEmpty) {
+      candidateTexts = List.from(_textSamples);
     }
 
     // Clear the samples for the next aggregation window.
     _textSamples.clear();
 
-    // Define a blacklist of words we want to ignore.
-    final Set<String> blacklist = {'ENERGY', 'ZERO SUGAR', 'SOUR', 'PATCH'};
+    // Choose the candidate text with the maximum length (assumed to be the full text).
+    String mostCompleteText = candidateTexts.reduce((a, b) =>
+        a.length >= b.length ? a : b);
 
-    // Filter lines:
-    List<String> candidateLines = allLines.where((line) {
-      // Remove lines that are very short.
-      if (line.length < 3) return false;
+    print("Aggregated full text candidate: $mostCompleteText");
 
-      // Optionally: Count occurrences of blacklisted words.
-      int blacklistCount = 0;
-      for (var word in blacklist) {
-        if (line.toUpperCase().contains(word)) {
-          blacklistCount++;
-        }
-      }
-      // If the line contains more than one blacklisted word, treat it as noise.
-      return blacklistCount < 2;
-    }).toList();
-
-    // If filtering removes everything, fall back to allLines.
-    if (candidateLines.isEmpty) candidateLines = allLines;
-
-    // Build frequency map for the candidate lines.
-    Map<String, int> frequency = {};
-    for (var line in candidateLines) {
-      frequency[line] = (frequency[line] ?? 0) + 1;
-    }
-
-    if (frequency.isEmpty) return;
-
-    // Pick the most common line.
-    String mostCommonLine = frequency.entries.reduce(
-      (a, b) => a.value >= b.value ? a : b,
-    ).key;
-
-    print("Aggregated line frequency: $frequency");
-    print("Most common line: $mostCommonLine");
-
-    // Trigger TTS if the selected line is nonempty, different from the last spoken text,
-    // and if TTS is not already busy.
-    if (mostCommonLine.isNotEmpty &&
-        mostCommonLine != _lastSpokenText &&
+    // Trigger TTS if the candidate is nonempty, different from what was last spoken, and TTS is not busy.
+    if (mostCompleteText.isNotEmpty &&
+        mostCompleteText != _lastSpokenText &&
         !_isSpeaking) {
-      _lastSpokenText = mostCommonLine;
+      _lastSpokenText = mostCompleteText;
       _isSpeaking = true;
-      print("Stable aggregated text detected, speaking: $mostCommonLine");
-      await _speakText(mostCommonLine);
+      print("Stable aggregated text detected, speaking: $mostCompleteText");
+      await _speakText(mostCompleteText);
     }
   }
 
@@ -269,13 +220,11 @@ class _OCRPageState extends State<OCRPage> {
       ),
       body: Column(
         children: [
-          // Live camera preview.
           AspectRatio(
             aspectRatio: _cameraController!.value.aspectRatio,
             child: CameraPreview(_cameraController!),
           ),
           const SizedBox(height: 16),
-          // Display the latest recognized text.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
@@ -284,16 +233,14 @@ class _OCRPageState extends State<OCRPage> {
             ),
           ),
           const SizedBox(height: 16),
-          // Button to manually test TTS.
           ElevatedButton(
             onPressed: () async {
               print("Test TTS button pressed.");
-              await _speakText("test of the text-to-speech system.");
+              await _speakText("Hello, this is a test of the text-to-speech system.");
             },
             child: const Text('Test TTS'),
           ),
           const SizedBox(height: 16),
-          // Button to stop speaking.
           ElevatedButton(
             onPressed: _stopSpeaking,
             child: const Text('Stop Speaking'),
