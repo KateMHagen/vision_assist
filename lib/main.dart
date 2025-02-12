@@ -3,8 +3,11 @@ import 'package:vision_assist/pages/alarm_page.dart';
 import 'package:vision_assist/pages/gps_page.dart';
 import 'package:vision_assist/pages/object_detection_page.dart';
 import 'package:vision_assist/pages/ocr_page.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+void  main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Ensures the app initializes properly
+  await dotenv.load(fileName: ".env"); // Load environment variables
   runApp(const MyApp());
 }
 

@@ -15,6 +15,7 @@ dependencies:
   google_mlkit_text_recognition: ^0.14.0  # Only use the ML Kit text recognition package
   twilio_flutter: ^0.9.0
   audioplayers: ^6.1.1
+  flutter_dotenv: ^5.2.1
 
 dev_dependencies:
   flutter_test:
@@ -25,3 +26,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/  # Only keep assets you need, remove tessdata if you're not using Tesseract
+    - .env

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:twilio_flutter/twilio_flutter.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 class AlarmPage extends StatefulWidget {
   @override
@@ -8,6 +10,8 @@ class AlarmPage extends StatefulWidget {
 }
 
 class _AlarmPageState extends State<AlarmPage> {
+
+
   final AudioPlayer _audioPlayer = AudioPlayer();
   late TwilioFlutter twilioFlutter;
 
@@ -15,8 +19,8 @@ class _AlarmPageState extends State<AlarmPage> {
   void initState() {
     super.initState();
     twilioFlutter = TwilioFlutter(
-      accountSid: "AC397b738351cba5f0e115062cbd70160d",
-      authToken: "bc245cde2e9e4aea14c3042df89906ca",
+      accountSid: dotenv.env['ACCOUNT_SID']!,
+      authToken: dotenv.env['AUTH_TOKEN']!,
       twilioNumber: "+18556081521", // Ensure this matches your Twilio account
     );
   }
