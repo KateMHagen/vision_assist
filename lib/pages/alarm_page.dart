@@ -1,7 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:twilio_flutter/twilio_flutter.dart';
+import 'package:audioplayers/audioplayers.dart';
 
-class AlarmPage extends StatelessWidget {
-  const AlarmPage({super.key});
+class AlarmPage extends StatefulWidget {
+  @override
+  _AlarmPageState createState() => _AlarmPageState();
+}
+
+class _AlarmPageState extends State<AlarmPage> {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  late TwilioFlutter twilioFlutter;
+
+  @override
+  void initState() {
+    super.initState();
+    twilioFlutter = TwilioFlutter(
+      accountSid: "AC397b738351cba5f0e115062cbd70160d",
+      authToken: "bc245cde2e9e4aea14c3042df89906ca",
+      twilioNumber: "+18556081521", // Ensure this matches your Twilio account
+    );
+  }
+
+  void sendSms() async {
+    try {
+      await twilioFlutter.sendSMS(
+        toNumber: "+18024889571",
+        messageBody: 'Emergency rescue',
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Emergency SMS sent successfully!')),
+      );
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send SMS: $error')),
+      );
+    }
+  }
+
+  void playAlarmSound() async {
+    try {
+      await _audioPlayer.play(AssetSource('alarm.mp3'));
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to play alarm sound: $error')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,49 +63,36 @@ class AlarmPage extends StatelessWidget {
         backgroundColor: Colors.red,
         elevation: 5,
       ),
-      body: Center( // Ensures the Column is centered in the parent
+      body: Center(
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Shrinks the column to fit its children
-          mainAxisAlignment: MainAxisAlignment.center, // Centers items along the vertical axis
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Bell Icon Button
             IconButton(
-              icon: Icon(Icons.notifications), // Bell notification icon
+              icon: Icon(Icons.notifications),
               iconSize: 80,
               color: Colors.redAccent,
-              onPressed: () {
-                print('Alarm triggered!');
-              },
+              onPressed: playAlarmSound,
             ),
-            SizedBox(height: 50), // Space between bell icon and buttons
-
-            // Emergency Contact Button 1
+            SizedBox(height: 50),
             ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Emergency Contact: John Doe')),
-                );
-                print('Contact 1');
-              },
+              onPressed: sendSms,
+              child: Text("Send Emergency SMS"),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 243, 89, 33), // Background color
+                backgroundColor: Color.fromARGB(255, 243, 89, 33),
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
                 textStyle: TextStyle(fontSize: 18),
               ),
-              child: Text('Contac 1'),
             ),
-            SizedBox(height: 20), // Space between the buttons
-
-            // Emergency Contact Button 2
+            SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Emergency Contact: Jane Smith')),
                 );
-                print('Contact 2');
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 243, 89, 33), // Background color
+                backgroundColor: Color.fromARGB(255, 243, 89, 33),
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
                 textStyle: TextStyle(fontSize: 18),
               ),
