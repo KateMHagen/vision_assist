@@ -22,6 +22,7 @@ dependencies:
   google_maps_webservice: ^0.0.19
   geolocator: ^13.0.2
   http: ^0.13.6
+  english_words: ^4.0.0
 
 dev_dependencies:
   flutter_test:
