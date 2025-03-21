@@ -49,9 +49,6 @@ class _MyHomePageState extends State<MyHomePage> {
    Widget build(BuildContext context) {
     
     return Scaffold(
-      appBar: AppBar(
-      
-      ),
       body: _pages[selectedIndex],
       bottomNavigationBar: NavigationBar(
         onDestinationSelected: (int index) {
