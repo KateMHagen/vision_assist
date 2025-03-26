@@ -35,6 +35,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
     super.initState();
     _getCurrentLocation();
     _startListeningToCompass();
+    _updatePolylines();
   }
 
   @override
@@ -129,6 +130,13 @@ class _NavigationScreenState extends State<NavigationScreen> {
   double _toRadians(double degree) => degree * math.pi / 180;
   double _toDegrees(double radian) => radian * 180 / math.pi;
 
+  void _updatePolylines() {
+    setState(() {
+      _polylines.clear();
+      _polylines.addAll(_buildPolylines());
+    });
+  }
+  
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -181,6 +189,25 @@ class _NavigationScreenState extends State<NavigationScreen> {
         ],
       ),
     );
+  }
+
+  Set<Polyline> _buildPolylines() {
+    List<LatLng> allPoints = [];
+    for (var direction in widget.directions) {
+      List<LatLng> polyline = direction['polyline']?.cast<LatLng>() ?? [];
+      allPoints.addAll(polyline);
+    }
+
+    if (allPoints.isEmpty) return {};
+
+    return {
+      Polyline(
+        polylineId: const PolylineId('route'),
+        color: Colors.blue,
+        width: 5,
+        points: allPoints,
+      ),
+    };
   }
 
   Widget _buildDirectionsList() {
