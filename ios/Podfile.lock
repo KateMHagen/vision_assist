@@ -17,11 +17,11 @@ PODS:
   - google_mlkit_commons (0.9.0):
     - Flutter
     - MLKitVision
-  - google_mlkit_object_detection (0.14.0):
+  - google_mlkit_image_labeling (0.13.0):
     - Flutter
     - google_mlkit_commons
-    - GoogleMLKit/ObjectDetection (~> 7.0.0)
-    - GoogleMLKit/ObjectDetectionCustom (~> 7.0.0)
+    - GoogleMLKit/ImageLabeling (~> 7.0.0)
+    - GoogleMLKit/ImageLabelingCustom (~> 7.0.0)
   - google_mlkit_text_recognition (0.14.0):
     - Flutter
     - google_mlkit_commons
@@ -29,17 +29,17 @@ PODS:
   - GoogleDataTransport (10.1.0):
     - nanopb (~> 3.30910.0)
     - PromisesObjC (~> 2.4)
-  - GoogleMaps (9.3.0):
-    - GoogleMaps/Maps (= 9.3.0)
-  - GoogleMaps/Maps (9.3.0)
+  - GoogleMaps (9.4.0):
+    - GoogleMaps/Maps (= 9.4.0)
+  - GoogleMaps/Maps (9.4.0)
+  - GoogleMLKit/ImageLabeling (7.0.0):
+    - GoogleMLKit/MLKitCore
+    - MLKitImageLabeling (~> 6.0.0)
+  - GoogleMLKit/ImageLabelingCustom (7.0.0):
+    - GoogleMLKit/MLKitCore
+    - MLKitImageLabelingCustom (~> 6.0.0)
   - GoogleMLKit/MLKitCore (7.0.0):
     - MLKitCommon (~> 12.0.0)
-  - GoogleMLKit/ObjectDetection (7.0.0):
-    - GoogleMLKit/MLKitCore
-    - MLKitObjectDetection (~> 6.0.0)
-  - GoogleMLKit/ObjectDetectionCustom (7.0.0):
-    - GoogleMLKit/MLKitCore
-    - MLKitObjectDetectionCustom (~> 6.0.0)
   - GoogleMLKit/TextRecognition (7.0.0):
     - GoogleMLKit/MLKitCore
     - MLKitTextRecognition (~> 5.0.0)
@@ -69,22 +69,22 @@ PODS:
     - GoogleUtilities/Logger (~> 8.0)
     - GoogleUtilities/UserDefaults (~> 8.0)
     - GTMSessionFetcher/Core (< 4.0, >= 3.3.2)
+  - MLKitImageLabeling (6.0.0):
+    - MLKitCommon (~> 12.0)
+    - MLKitImageLabelingCommon (~> 8.0)
+    - MLKitVision (~> 8.0)
+    - MLKitVisionKit (~> 9.0)
   - MLKitImageLabelingCommon (8.0.0):
     - MLKitCommon (~> 12.0)
     - MLKitVision (~> 8.0)
-  - MLKitObjectDetection (6.0.0):
+  - MLKitImageLabelingCustom (6.0.0):
     - MLKitCommon (~> 12.0)
-    - MLKitObjectDetectionCommon (~> 8.0)
+    - MLKitImageLabelingCommon (~> 8.0)
     - MLKitVision (~> 8.0)
     - MLKitVisionKit (~> 9.0)
   - MLKitObjectDetectionCommon (8.0.0):
     - MLKitCommon (~> 12.0)
     - MLKitVision (~> 8.0)
-  - MLKitObjectDetectionCustom (6.0.0):
-    - MLKitCommon (~> 12.0)
-    - MLKitObjectDetectionCommon (~> 8.0)
-    - MLKitVision (~> 8.0)
-    - MLKitVisionKit (~> 9.0)
   - MLKitTextRecognition (5.0.0):
     - MLKitCommon (~> 12.0)
     - MLKitTextRecognitionCommon (= 4.0.0)
@@ -125,7 +125,7 @@ DEPENDENCIES:
   - geolocator_apple (from `.symlinks/plugins/geolocator_apple/ios`)
   - google_maps_flutter_ios (from `.symlinks/plugins/google_maps_flutter_ios/ios`)
   - google_mlkit_commons (from `.symlinks/plugins/google_mlkit_commons/ios`)
-  - google_mlkit_object_detection (from `.symlinks/plugins/google_mlkit_object_detection/ios`)
+  - google_mlkit_image_labeling (from `.symlinks/plugins/google_mlkit_image_labeling/ios`)
   - google_mlkit_text_recognition (from `.symlinks/plugins/google_mlkit_text_recognition/ios`)
   - GoogleMaps
   - GooglePlaces
@@ -146,10 +146,10 @@ SPEC REPOS:
     - GTMSessionFetcher
     - MLImage
     - MLKitCommon
+    - MLKitImageLabeling
     - MLKitImageLabelingCommon
-    - MLKitObjectDetection
+    - MLKitImageLabelingCustom
     - MLKitObjectDetectionCommon
-    - MLKitObjectDetectionCustom
     - MLKitTextRecognition
     - MLKitTextRecognitionCommon
     - MLKitVision
@@ -172,8 +172,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/google_maps_flutter_ios/ios"
   google_mlkit_commons:
     :path: ".symlinks/plugins/google_mlkit_commons/ios"
-  google_mlkit_object_detection:
-    :path: ".symlinks/plugins/google_mlkit_object_detection/ios"
+  google_mlkit_image_labeling:
+    :path: ".symlinks/plugins/google_mlkit_image_labeling/ios"
   google_mlkit_text_recognition:
     :path: ".symlinks/plugins/google_mlkit_text_recognition/ios"
   image_picker_ios:
@@ -194,10 +194,10 @@ SPEC CHECKSUMS:
   Google-Maps-iOS-Utils: 0a484b05ed21d88c9f9ebbacb007956edd508a96
   google_maps_flutter_ios: 0291eb2aa252298a769b04d075e4a9d747ff7264
   google_mlkit_commons: 92c769cc2e0a2bfdeb3c38091a36e8a9cc8c63d4
-  google_mlkit_object_detection: d0865775c31032eb7d945eae66d08b0456ba3ce6
+  google_mlkit_image_labeling: e01dfa7cf050b00f8db79e37ae385c0f4ea82de6
   google_mlkit_text_recognition: d70cc1ed5064db39fce44d77b2c5449adc39a13d
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
-  GoogleMaps: b58e9627004f47043897eeae830c3ef023678f3b
+  GoogleMaps: 0608099d4870cac8754bdba9b6953db543432438
   GoogleMLKit: eff9e23ec1d90ea4157a1ee2e32a4f610c5b3318
   GooglePlaces: 8afca6c4e946472e91298589d1640d614b51749a
   GoogleToolboxForMac: d1a2cbf009c453f4d6ded37c105e2f67a32206d8
@@ -206,10 +206,10 @@ SPEC CHECKSUMS:
   image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
   MLImage: 0ad1c5f50edd027672d8b26b0fee78a8b4a0fc56
   MLKitCommon: 07c2c33ae5640e5380beaaa6e4b9c249a205542d
+  MLKitImageLabeling: 7f052589de9ffde213bc2c26854d212ea4dde17a
   MLKitImageLabelingCommon: 23f0c9037c2c6433784db594bd1bb87173172fe9
-  MLKitObjectDetection: a5f066aa6e90f134fc1ac47940e95381b7eb5257
+  MLKitImageLabelingCustom: 594c49fa1bb809ec05215bb4ac1c15729c7a601a
   MLKitObjectDetectionCommon: 0198709a728984e3b6fac98a5fa53a8042880336
-  MLKitObjectDetectionCustom: b243512ccac75c98399c272e213b53413a255c07
   MLKitTextRecognition: 3b41f3ff084a79afb214408d25d2068d77ab322c
   MLKitTextRecognitionCommon: cd44577a8c506fc6bba065096de03bec0d01a213
   MLKitVision: 45e79d68845a2de77e2dd4d7f07947f0ed157b0e

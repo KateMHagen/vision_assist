@@ -3,38 +3,42 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:google_mlkit_object_detection/google_mlkit_object_detection.dart';
+import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
 import 'package:flutter/foundation.dart';
 
-class ObjectDetectionPage extends StatefulWidget {
-  const ObjectDetectionPage({super.key});
+class ObjectClassificationPage extends StatefulWidget {
+  const ObjectClassificationPage({super.key});
 
   @override
-  State<ObjectDetectionPage> createState() => _ObjectDetectionPageState();
+  State<ObjectClassificationPage> createState() =>
+      _ObjectClassificationPageState();
 }
 
-class _ObjectDetectionPageState extends State<ObjectDetectionPage> {
+class _ObjectClassificationPageState extends State<ObjectClassificationPage> {
   CameraController? _cameraController;
   bool _isDetecting = false;
-  List<DetectedObject> _detectedObjects = [];
-  late ObjectDetector _objectDetector;
+  List<ImageLabel> _labels = [];
+  late ImageLabeler _imageLabeler;
   List<CameraDescription>? _cameras;
 
   final FlutterTts _flutterTts = FlutterTts();
   String? _lastSpokenLabel;
-  DateTime _lastSpokenTime = DateTime.now().subtract(Duration(seconds: 2));
+  DateTime _lastSpokenTime =
+      DateTime.now().subtract(const Duration(seconds: 2));
 
   @override
   void initState() {
     super.initState();
     _initializeCamera();
-    _objectDetector = ObjectDetector(
-      options: ObjectDetectorOptions(
-        mode: DetectionMode.stream,
-        classifyObjects: true,
-        multipleObjects: true,
-      ),
-    );
+    _initializeTTS();
+    _imageLabeler = ImageLabeler(options: ImageLabelerOptions());
+  }
+
+  Future<void> _initializeTTS() async {
+    await _flutterTts.setLanguage('en-US');
+    await _flutterTts.setSpeechRate(0.35); // slower
+    await _flutterTts.setPitch(1.0);
+    await _flutterTts.setVolume(1.0);
   }
 
   Future<void> _initializeCamera() async {
@@ -58,7 +62,6 @@ class _ObjectDetectionPageState extends State<ObjectDetectionPage> {
 
   void _processCameraImage(CameraImage image) async {
     if (_isDetecting) return;
-
     _isDetecting = true;
 
     try {
@@ -88,27 +91,25 @@ class _ObjectDetectionPageState extends State<ObjectDetectionPage> {
         metadata: inputImageMetadata,
       );
 
-      final detectedObjects = await _objectDetector.processImage(inputImage);
+      final labels = await _imageLabeler.processImage(inputImage);
+      final filteredLabels = labels.where((l) => l.confidence > 0.75).toList();
 
       setState(() {
-        _detectedObjects = detectedObjects;
+        _labels = filteredLabels;
       });
 
-      if (detectedObjects.isNotEmpty) {
-        final firstLabel = detectedObjects.first.labels.isNotEmpty
-            ? detectedObjects.first.labels.first.text
-            : null;
+      if (filteredLabels.isNotEmpty) {
+        final label = filteredLabels.first.label;
 
-        if (firstLabel != null &&
-            (firstLabel != _lastSpokenLabel ||
-                DateTime.now().difference(_lastSpokenTime).inSeconds > 2)) {
-          await _flutterTts.speak(firstLabel);
-          _lastSpokenLabel = firstLabel;
+        if (label != _lastSpokenLabel ||
+            DateTime.now().difference(_lastSpokenTime).inSeconds > 2) {
+          await _flutterTts.speak(label);
+          _lastSpokenLabel = label;
           _lastSpokenTime = DateTime.now();
         }
       }
     } catch (e) {
-      print("Error detecting objects: $e");
+      print("Image classification error: $e");
     } finally {
       _isDetecting = false;
     }
@@ -117,7 +118,7 @@ class _ObjectDetectionPageState extends State<ObjectDetectionPage> {
   @override
   void dispose() {
     _cameraController?.dispose();
-    _objectDetector.close();
+    _imageLabeler.close();
     _flutterTts.stop();
     super.dispose();
   }
@@ -133,10 +134,8 @@ class _ObjectDetectionPageState extends State<ObjectDetectionPage> {
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(
-            child: CameraPreview(_cameraController!),
-          ),
-          if (_detectedObjects.isNotEmpty)
+          Positioned.fill(child: CameraPreview(_cameraController!)),
+          if (_labels.isNotEmpty)
             Positioned(
               bottom: 0,
               left: 0,
@@ -156,48 +155,36 @@ class _ObjectDetectionPageState extends State<ObjectDetectionPage> {
                   ),
                 ),
                 padding: const EdgeInsets.all(16),
-                height: 220,
+                height: 180,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      "Detected Objects",
+                      "Detected Labels",
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Expanded(
                       child: ListView.builder(
-                        itemCount: _detectedObjects.length,
+                        itemCount: _labels.length,
                         itemBuilder: (context, index) {
-                          final obj = _detectedObjects[index];
-                          final label = obj.labels.isNotEmpty
-                              ? obj.labels.first.text
-                              : 'Unknown';
-                          final confidence = obj.labels.isNotEmpty
-                              ? obj.labels.first.confidence.toStringAsFixed(2)
-                              : 'N/A';
+                          final label = _labels[index];
                           return ListTile(
                             dense: true,
-                            visualDensity: const VisualDensity(
-                                vertical: -2, horizontal: -4),
-                            leading: const Icon(Icons.label_outline,
-                                color: Colors.deepPurple),
+                            leading:
+                                const Icon(Icons.tag, color: Colors.deepPurple),
                             title: Text(
-                              label,
+                              label.label,
                               style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
+                                  fontWeight: FontWeight.bold, fontSize: 16),
                             ),
                             subtitle: Text(
-                              'Confidence: $confidence',
+                              'Confidence: ${label.confidence.toStringAsFixed(2)}',
                               style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.black54,
-                              ),
+                                  fontSize: 14, color: Colors.black54),
                             ),
                           );
                         },
