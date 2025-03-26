@@ -49,9 +49,6 @@ class _MyHomePageState extends State<MyHomePage> {
    Widget build(BuildContext context) {
     
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cross Platform App'),
-      ),
       body: _pages[selectedIndex],
       bottomNavigationBar: NavigationBar(
         onDestinationSelected: (int index) {
@@ -59,7 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
             selectedIndex = index;
           });
         },
-        indicatorColor: Colors.amber,
+        indicatorColor: const Color.fromARGB(255, 92, 160, 249),
         selectedIndex: selectedIndex,
         destinations: const <Widget>[
           NavigationDestination(
