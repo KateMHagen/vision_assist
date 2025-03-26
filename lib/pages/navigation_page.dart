@@ -10,12 +10,12 @@ class NavigationScreen extends StatefulWidget {
   final LatLng origin;
   final LatLng destination;
 
-  const NavigationScreen(
-      {Key? key,
-      required this.directions,
-      required this.origin,
-      required this.destination})
-      : super(key: key);
+  const NavigationScreen({
+    Key? key,
+    required this.directions,
+    required this.origin,
+    required this.destination,
+  }) : super(key: key);
 
   @override
   _NavigationScreenState createState() => _NavigationScreenState();
@@ -28,7 +28,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
   double _currentHeading = 0.0;
   bool _isLoading = true;
   late StreamSubscription<Position> _positionStreamSubscription;
-  StreamSubscription<CompassEvent>? _compassSubscription; // Changed the type here
+  StreamSubscription<CompassEvent>? _compassSubscription;
 
   @override
   void initState() {
@@ -58,10 +58,11 @@ class _NavigationScreenState extends State<NavigationScreen> {
       setState(() => _isLoading = false);
     }
     _positionStreamSubscription = Geolocator.getPositionStream(
-            locationSettings: const LocationSettings(
-      accuracy: LocationAccuracy.bestForNavigation,
-      distanceFilter: 10,
-    )).listen((Position position) {
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 10,
+      ),
+    ).listen((Position position) {
       setState(() {
         _currentPosition = position;
       });
@@ -70,10 +71,11 @@ class _NavigationScreenState extends State<NavigationScreen> {
   }
 
   void _startListeningToCompass() {
-    _compassSubscription = FlutterCompass.events?.listen((CompassEvent? heading) { // listen to compass
+    _compassSubscription =
+        FlutterCompass.events?.listen((CompassEvent? heading) {
       if (heading != null) {
         setState(() {
-          _currentHeading = heading.heading ?? 0.0; // Use null aware operator and ??
+          _currentHeading = heading.heading ?? 0.0;
         });
         _updateMapCamera();
       }
@@ -83,7 +85,6 @@ class _NavigationScreenState extends State<NavigationScreen> {
   void _updateMapCamera() {
     if (_mapController == null || _currentPosition == null) return;
 
-    // Calculate the bearing between current position and the next point
     double bearing = 0;
     if (widget.directions.isNotEmpty) {
       List<LatLng> polylinePoints =
@@ -126,48 +127,58 @@ class _NavigationScreenState extends State<NavigationScreen> {
     return (brng + 360) % 360;
   }
 
-  double _toRadians(double degree) {
-    return degree * math.pi / 180;
-  }
-
-  double _toDegrees(double radian) {
-    return radian * 180 / math.pi;
-  }
+  double _toRadians(double degree) => degree * math.pi / 180;
+  double _toDegrees(double radian) => radian * 180 / math.pi;
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Navigation'),
+        backgroundColor: Colors.deepPurple,
       ),
       body: Column(
         children: [
           Expanded(
-            child: GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: LatLng(
-                  _currentPosition!.latitude,
-                  _currentPosition!.longitude,
+            flex: 2,
+            child: ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(bottom: Radius.circular(20)),
+              child: GoogleMap(
+                initialCameraPosition: CameraPosition(
+                  target: LatLng(
+                    _currentPosition!.latitude,
+                    _currentPosition!.longitude,
+                  ),
+                  zoom: 17,
                 ),
-                zoom: 17,
+                mapType: MapType.normal,
+                myLocationEnabled: true,
+                myLocationButtonEnabled: false,
+                polylines: _buildPolylines(),
+                onMapCreated: (GoogleMapController controller) {
+                  _mapController = controller;
+                },
               ),
-              mapType: MapType.normal,
-              myLocationEnabled: true,
-              myLocationButtonEnabled: false,
-              polylines: _buildPolylines(),
-              onMapCreated: (GoogleMapController controller) {
-                _mapController = controller;
-              },
             ),
           ),
-          _buildDirectionsList(),
+          const SizedBox(height: 8),
+          Expanded(
+            flex: 1,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: _buildDirectionsList(),
+            ),
+          ),
         ],
       ),
     );
@@ -193,34 +204,19 @@ class _NavigationScreenState extends State<NavigationScreen> {
   }
 
   Widget _buildDirectionsList() {
-    return Container(
-      height: 200,
-      padding: const EdgeInsets.all(8.0),
-      child: ListView.builder(
-        itemCount: widget.directions.length,
-        itemBuilder: (context, index) {
-          final direction = widget.directions[index];
-          return ListTile(
-            title: RichText(
-              text: TextSpan(
-                style: DefaultTextStyle.of(context).style,
-                children: <TextSpan>[
-                  TextSpan(
-                    text: direction['instruction']
-                        .replaceAll(RegExp(r'<[^>]*>'), ''),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(
-                      text:
-                          ' (${direction['distance']}, ${direction['duration']})'),
-                ],
-              ),
-            ),
-            // Display maneuver icons
-            leading: _getManeuverIcon(direction['maneuver']),
-          );
-        },
-      ),
+    return ListView.builder(
+      itemCount: widget.directions.length,
+      itemBuilder: (context, index) {
+        final direction = widget.directions[index];
+        return ListTile(
+          leading: _getManeuverIcon(direction['maneuver']),
+          title: Text(
+            direction['instruction'].replaceAll(RegExp(r'<[^>]*>'), ''),
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text('${direction['distance']} • ${direction['duration']}'),
+        );
+      },
     );
   }
 

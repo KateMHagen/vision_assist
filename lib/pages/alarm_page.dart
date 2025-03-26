@@ -57,7 +57,7 @@ class _EmergencyAlarmPageState extends State<EmergencyAlarmPage> {
   }
 
   Future<void> _sendEmergencyMessage() async {
-    await _flutterTts.speak("Sending alert to emergency contacts");
+    await _flutterTts.speak("Sending alert to first contact");
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String contact1 = prefs.getString('contact1') ?? '';
