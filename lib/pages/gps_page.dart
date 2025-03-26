@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:vision_assist/services/api_service.dart'; 
 
 class GPSPage extends StatefulWidget {
@@ -16,23 +17,92 @@ class _GPSPageState extends State<GPSPage> {
   final Set<Polyline> _polylines = {};
   LatLng? _selectedDestination;
   bool _isLoading = true;
-  bool _showNavigationButton = false; // Flag to control visibility of navigation button
+  bool _showNavigationButton = false;
 
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation();
+    _checkAndRequestLocationPermission();
+  }
+
+  Future<void> _checkAndRequestLocationPermission() async {
+    // Check permission status using permission_handler
+    var status = await Permission.locationWhenInUse.status;
+
+    if (status.isDenied || status.isPermanentlyDenied) {
+      // Request permission
+      status = await Permission.locationWhenInUse.request();
+    }
+
+    if (status.isGranted) {
+      // Permission granted, proceed to get current location
+      _getCurrentLocation();
+    } else {
+      // Handle permission denied
+      _handleLocationPermissionDenied();
+    }
+  }
+
+  void _handleLocationPermissionDenied() {
+    setState(() {
+      _isLoading = false;
+    });
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Location Access Needed'),
+        content: Text('This app requires location access to provide navigation services. Please enable location permissions in your device settings.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              openAppSettings(); // Opens app settings
+            },
+            child: Text('Open Settings'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancel'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _getCurrentLocation() async {
     try {
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      setState(() {
-        _currentPosition = position;
-        _isLoading = false;
-      });
+      // Ensure location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        await Geolocator.openLocationSettings();
+        return;
+      }
+
+      // Request precise location permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        // Permissions are denied forever, handle appropriately
+        return _handleLocationPermissionDenied();
+      }
+
+      if (permission == LocationPermission.whileInUse || 
+          permission == LocationPermission.always) {
+        // Retrieve current position with iOS-specific accuracy
+        Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.bestForNavigation,
+          timeLimit: Duration(seconds: 10),
+        );
+
+        setState(() {
+          _currentPosition = position;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -233,7 +303,7 @@ class _GPSPageState extends State<GPSPage> {
               myLocationEnabled: true,
               myLocationButtonEnabled: true,
               markers: _markers,
-              polylines: _polylines, // Add the polylines to the map
+              polylines: _polylines,
               onMapCreated: (GoogleMapController controller) {
                 _mapController = controller;
               },
