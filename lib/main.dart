@@ -17,7 +17,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-      
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
@@ -36,54 +35,45 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int selectedIndex = 0; 
+  int selectedIndex = 0;
 
   final List<Widget> _pages = [
     ObjectDetectionPage(),
     OCRPage(),
     GPSPage(),
-    AlarmPage(),
+    EmergencyAlarmPage()
   ];
 
   @override
-   Widget build(BuildContext context) {
-    
+  Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[selectedIndex],
-      bottomNavigationBar: NavigationBar(
-        onDestinationSelected: (int index) {
-          setState(() {
-            selectedIndex = index;
-          });
-        },
-        indicatorColor: const Color.fromARGB(255, 92, 160, 249),
-        selectedIndex: selectedIndex,
-        destinations: const <Widget>[
-          NavigationDestination(
-            icon: Icon(Icons.document_scanner_outlined),
-            label: 'Object Detection',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.font_download),
-            label: 'Text to Speech',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.map_outlined),
-            label: 'GPS',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.alarm),
-            label: 'Alarm',
-          ),
-        ],
-      )
-    );
-      
-  
-  
+        body: _pages[selectedIndex],
+        bottomNavigationBar: NavigationBar(
+          onDestinationSelected: (int index) {
+            setState(() {
+              selectedIndex = index;
+            });
+          },
+          indicatorColor: const Color.fromARGB(255, 92, 160, 249),
+          selectedIndex: selectedIndex,
+          destinations: const <Widget>[
+            NavigationDestination(
+              icon: Icon(Icons.document_scanner_outlined),
+              label: 'Object Detection',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.font_download),
+              label: 'Text to Speech',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.map_outlined),
+              label: 'GPS',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.alarm),
+              label: 'Alarm',
+            ),
+          ],
+        ));
   }
 }
-
-
-
-
