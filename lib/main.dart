@@ -41,7 +41,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int selectedIndex = 0;
 
   final List<Widget> _pages = [
-    ObjectDetectionPage(),
+    ObjectClassificationPage(),
     OCRPage(),
     GPSPage(),
     EmergencyAlarmPage()
