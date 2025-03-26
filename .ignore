@@ -1,0 +1,407 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+
+// Replace this with your actual Google Places API key
+const String GOOGLE_API_KEY = 'AIzaSyAbxrh2JQja5pH05lidjgq5ZHfDFW8ZiZM';
+
+class ApiService {
+  // Method to fetch places from the Google Places API based on a query
+  static Future<List<LatLng>> searchPlaces(String query, LatLng location) async {
+    final String encodedQuery = Uri.encodeComponent(query); // URL encode the query
+    final String url =
+        'https://maps.googleapis.com/maps/api/place/textsearch/json?query=$encodedQuery&location=${location.latitude},${location.longitude}&key=$GOOGLE_API_KEY';
+
+    final response = await http.get(Uri.parse(url));
+
+    print('API Response: ${response.body}'); // Log the response
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final places = (data['results'] as List)
+          .map((placeJson) => LatLng(
+                placeJson['geometry']['location']['lat'],
+                placeJson['geometry']['location']['lng'],
+              ))
+          .toList();
+      return places;
+    } else {
+      throw Exception('Failed to load places');
+    }
+  }
+  // Method to fetch directions from the Google Maps Directions API
+  static Future<List<LatLng>> getWalkingDirections(LatLng origin, LatLng destination) async {
+    final String url =
+      'https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&mode=walking&key=$GOOGLE_API_KEY';
+
+    final response = await http.get(Uri.parse(url));
+
+    print('Directions API Response: ${response.body}'); // Log the response
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if ((data['routes'] as List).isEmpty) {
+        throw Exception('No routes found');
+      }
+
+      final points = data['routes'][0]['overview_polyline']['points'];
+      return _decodePolyline(points);
+    } else {
+      throw Exception('Failed to load directions');
+    }
+  }
+
+  // Helper function to decode the polyline points
+  static List<LatLng> _decodePolyline(String polyline) {
+    List<LatLng> polylineCoordinates = [];
+    int index = 0, len = polyline.length;
+    int lat = 0, lng = 0;
+
+    while (index < len) {
+      int shift = 0, result = 0;
+      int b;
+      do {
+        b = polyline.codeUnitAt(index++) - 63;
+        result |= (b & 0x1F) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int deltaLat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lat += deltaLat;
+
+      shift = 0;
+      result = 0;
+      do {
+        b = polyline.codeUnitAt(index++) - 63;
+        result |= (b & 0x1F) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int deltaLng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lng += deltaLng;
+
+      polylineCoordinates.add(LatLng(lat / 1E5, lng / 1E5));
+    }
+
+    return polylineCoordinates;
+  }
+}
+
+
+
+-----------------
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'dart:math' as math;
+
+// Replace this with your actual Google Places API key
+const String GOOGLE_API_KEY = 'AIzaSyAbxrh2JQja5pH05lidjgq5ZHfDFW8ZiZM';
+
+class ApiService {
+  // Method to fetch places from the Google Places API based on a query
+  static Future<List<LatLng>> searchPlaces(String query, LatLng location) async {
+    final String encodedQuery = Uri.encodeComponent(query); // URL encode the query
+    final String url = 'https://maps.googleapis.com/maps/api/place/textsearch/json?query=$encodedQuery&location=${location.latitude},${location.longitude}&key=$GOOGLE_API_KEY';
+    
+    final response = await http.get(Uri.parse(url));
+    print('API Response (Places Search): ${response.body}'); // Log the response
+    
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['status'] != 'OK') {
+        print('Google Places API Error: ${data['status']}');
+        throw Exception('Google Places API Error: ${data['status']}');
+      }
+      
+      final places = (data['results'] as List)
+          .map((placeJson) => LatLng(
+                placeJson['geometry']['location']['lat'],
+                placeJson['geometry']['location']['lng'],
+              ))
+          .toList();
+      
+      print('Parsed Places: $places');
+      return places;
+    } else {
+      throw Exception('Failed to load places');
+    }
+  }
+
+  // Method to fetch walking directions from Google Maps Directions API
+  static Future<Map<String, dynamic>> getWalkingDirections(LatLng origin, LatLng destination) async {
+    final String url = 'https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&mode=walking&key=$GOOGLE_API_KEY';
+    
+    final response = await http.get(Uri.parse(url));
+    print('API Response (Directions): ${response.body}'); // Log the response
+    
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['status'] != 'OK') {
+        print('Google Directions API Error: ${data['status']}');
+        throw Exception('Google Directions API Error: ${data['status']}');
+      }
+      
+      if ((data['routes'] as List).isEmpty) {
+        print('No routes found');
+        throw Exception('No routes found');
+      }
+      
+      final route = data['routes'][0];
+      final leg = route['legs'][0];
+      final points = route['overview_polyline']['points'];
+      
+      // Use the new decoding method
+      //List<LatLng> polylinePoints = decodePolylinePoints(points);
+      
+      // Print properly decoded points
+      print('Properly Decoded Polyline: $polylinePoints');
+      
+      // Process steps for detailed instructions
+      final steps = leg['steps'] as List;
+      final processedSteps = steps.map((step) {
+        // Clean HTML from instructions
+        String instruction = step['html_instructions'].toString()
+            .replaceAll(RegExp(r'<[^>]*>'), ' ')
+            .replaceAll(RegExp(r'\s+'), ' ')
+            .trim();
+            
+        // Decode step's polyline
+        List<LatLng> stepPoints = [];
+        if (step['polyline'] != null && step['polyline']['points'] != null) {
+          stepPoints = decodePolylinePoints(step['polyline']['points']);
+        }
+        
+        return {
+          'instruction': instruction,
+          'distance': step['distance']['text'],
+          'duration': step['duration']['text'],
+          'maneuver': step['maneuver'] ?? '',
+          'start_location': LatLng(
+            step['start_location']['lat'],
+            step['start_location']['lng'],
+          ),
+          'end_location': LatLng(
+            step['end_location']['lat'],
+            step['end_location']['lng'],
+          ),
+          'points': stepPoints,
+        };
+      }).toList();
+      
+      // Return complete navigation data
+      return {
+        'overview_polyline': polylinePoints,
+        'total_distance': leg['distance']['text'],
+        'total_duration': leg['duration']['text'],
+        'start_address': leg['start_address'],
+        'end_address': leg['end_address'],
+        'steps': processedSteps,
+      };
+    } else {
+      throw Exception('Failed to load directions');
+    }
+  }
+
+  static List<LatLng> decodePolylinePoints(String encoded) {
+    List<LatLng> points = [];
+    int index = 0;
+    int len = encoded.length;
+    int lat = 0, lng = 0;
+
+    while (index < len) {
+      int b, shift = 0, result = 0;
+      
+      // Decode latitude
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      
+      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+      
+      // Decode longitude
+      shift = 0;
+      result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      
+      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+      
+      // Convert to actual coordinates and add to list
+      double latitude = lat / 1e5;
+      double longitude = lng / 1e5;
+      points.add(LatLng(latitude, longitude));
+    }
+    
+    return points;
+  }
+  
+  // Generate accessible voice guidance based on current location and direction
+  static Map<String, dynamic> getAccessibleDirections(LatLng currentLocation, Map<String, dynamic> routeData) {
+    final steps = routeData['steps'] as List<Map<String, dynamic>>;
+    
+    // Find the closest step
+    int activeStepIndex = 0;
+    double minDistance = double.infinity;
+    
+    for (int i = 0; i < steps.length; i++) {
+      final step = steps[i];
+      final points = step['points'] as List<LatLng>;
+      
+      // If there are points in this step, check distance to each
+      if (points.isNotEmpty) {
+        for (var point in points) {
+          double distance = calculateDistance(
+            currentLocation.latitude, currentLocation.longitude,
+            point.latitude, point.longitude
+          );
+          
+          if (distance < minDistance) {
+            minDistance = distance;
+            activeStepIndex = i;
+          }
+        }
+      }
+    }
+    
+    // Get the active step
+    final activeStep = steps[activeStepIndex];
+    final distanceToEndOfStep = calculateDistance(
+      currentLocation.latitude, currentLocation.longitude,
+      activeStep['end_location'].latitude, activeStep['end_location'].longitude
+    );
+    
+    // Prepare next instruction if we're close to the end of this step
+    String nextInstruction = "";
+    bool isApproachingNextStep = distanceToEndOfStep < 20; // 20 meters
+    
+    if (isApproachingNextStep && activeStepIndex < steps.length - 1) {
+      final nextStep = steps[activeStepIndex + 1];
+      nextInstruction = "In ${distanceToEndOfStep.toStringAsFixed(0)} meters, ${nextStep['instruction']}";
+    } else if (isApproachingNextStep && activeStepIndex == steps.length - 1) {
+      nextInstruction = "You are approaching your destination. It will be on the left.";
+    }
+    
+    // Create detailed verbal directions
+    String currentDirectionText = activeStep['instruction'];
+    String distanceRemainingText = "About ${distanceToEndOfStep.toStringAsFixed(0)} meters remaining in this segment.";
+    
+    // Add street crossing warnings for safety
+    String safetyWarning = "";
+    if (activeStep['instruction'].toLowerCase().contains("cross")) {
+      safetyWarning = "Caution: You will need to cross a street. Please use caution and listen for traffic.";
+    }
+    
+    // Incorporate landmarks from the direction text for better spatial awareness
+    String landmarkInfo = "";
+    if (activeStep['instruction'].toLowerCase().contains("left") || 
+        activeStep['instruction'].toLowerCase().contains("right")) {
+      landmarkInfo = "Look for changes in the sidewalk texture to indicate the turn.";
+    }
+    
+    return {
+      'current_step_index': activeStepIndex,
+      'total_steps': steps.length,
+      'current_instruction': currentDirectionText,
+      'distance_remaining': distanceRemainingText,
+      'next_instruction': nextInstruction,
+      'safety_warning': safetyWarning,
+      'landmark_info': landmarkInfo,
+      'distance_to_destination': calculateTotalRemainingDistance(currentLocation, steps, activeStepIndex),
+      'time_to_destination': estimateRemainingTime(currentLocation, steps, activeStepIndex),
+      'progress_percentage': ((activeStepIndex) / steps.length * 100).toStringAsFixed(0),
+    };
+  }
+  
+  // Helper to calculate remaining distance to destination
+  static String calculateTotalRemainingDistance(LatLng currentLocation, List<dynamic> steps, int activeStepIndex) {
+    double totalDistance = 0;
+    
+    // Add distance from current location to end of current step
+    Map<String, dynamic> currentStep = steps[activeStepIndex];
+    LatLng endOfCurrentStep = currentStep['end_location'];
+    
+    totalDistance += calculateDistance(
+      currentLocation.latitude, currentLocation.longitude,
+      endOfCurrentStep.latitude, endOfCurrentStep.longitude
+    );
+    
+    // Add distances of remaining steps
+    for (int i = activeStepIndex + 1; i < steps.length; i++) {
+      Map<String, dynamic> step = steps[i];
+      // Use the step's distance value in meters
+      totalDistance += step['distance']['value'] ?? 0;
+    }
+    
+    // Format distance based on length
+    if (totalDistance > 1000) {
+      return "${(totalDistance / 1000).toStringAsFixed(1)} km";
+    } else {
+      return "${totalDistance.toStringAsFixed(0)} meters";
+    }
+  }
+  
+  // Helper to estimate remaining time
+  static String estimateRemainingTime(LatLng currentLocation, List<dynamic> steps, int activeStepIndex) {
+    // Assume average walking speed of 1.4 meters per second
+    const double avgWalkingSpeed = 1.4;
+    
+    // Calculate remaining time in seconds
+    double remainingTimeSeconds = 0;
+    
+    // Add time from current location to end of current step
+    Map<String, dynamic> currentStep = steps[activeStepIndex];
+    LatLng endOfCurrentStep = currentStep['end_location'];
+    
+    double distanceToEndOfCurrentStep = calculateDistance(
+      currentLocation.latitude, currentLocation.longitude,
+      endOfCurrentStep.latitude, endOfCurrentStep.longitude
+    );
+    
+    remainingTimeSeconds += distanceToEndOfCurrentStep / avgWalkingSpeed;
+    
+    // Add times of remaining steps
+    for (int i = activeStepIndex + 1; i < steps.length; i++) {
+      Map<String, dynamic> step = steps[i];
+      remainingTimeSeconds += step['duration']['value'] ?? 0;
+    }
+    
+    // Format time
+    int minutes = (remainingTimeSeconds / 60).floor();
+    if (minutes < 1) {
+      return "Less than 1 minute";
+    } else if (minutes == 1) {
+      return "About 1 minute";
+    } else {
+      return "About $minutes minutes";
+    }
+  }
+  
+  // Helper method to calculate distance between two points using Haversine formula
+  static double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const double earthRadius = 6371000; // in meters
+    
+    // Convert to radians
+    double lat1Rad = lat1 * math.pi / 180;
+    double lon1Rad = lon1 * math.pi / 180;
+    double lat2Rad = lat2 * math.pi / 180;
+    double lon2Rad = lon2 * math.pi / 180;
+    
+    // Calculate differences
+    double dLat = lat2Rad - lat1Rad;
+    double dLon = lon2Rad - lon1Rad;
+    
+    // Calculate distance
+    double a = math.sin(dLat/2) * math.sin(dLat/2) +
+               math.cos(lat1Rad) * math.cos(lat2Rad) * 
+               math.sin(dLon/2) * math.sin(dLon/2);
+    double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a));
+    
+    return earthRadius * c;
+  }
+}
