@@ -40,7 +40,7 @@ class _OCRPageState extends State<OCRPage> {
   Future<void> _initializeTTS() async {
     await _flutterTts.setLanguage('en-US');
     await _flutterTts.setVolume(1.0);
-    await _flutterTts.setSpeechRate(0.5);
+    await _flutterTts.setSpeechRate(0.3);
     await _flutterTts.setPitch(1.0);
     _flutterTts.awaitSpeakCompletion;
 
@@ -184,8 +184,8 @@ class _OCRPageState extends State<OCRPage> {
     if (s.isEmpty) return t.length;
     if (t.isEmpty) return s.length;
 
-    List<List<int>> matrix = List.generate(s.length + 1,
-        (_) => List.filled(t.length + 1, 0),
+    List<List<int>> matrix = List.generate(
+        s.length + 1, (_) => List.filled(t.length + 1, 0),
         growable: false);
 
     for (int i = 0; i <= s.length; i++) matrix[i][0] = i;

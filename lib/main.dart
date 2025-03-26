@@ -3,31 +3,34 @@ import 'package:vision_assist/pages/alarm_page.dart';
 import 'package:vision_assist/pages/gps_page.dart';
 import 'package:vision_assist/pages/object_detection_page.dart';
 import 'package:vision_assist/pages/ocr_page.dart';
+import 'package:vision_assist/pages/splash_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: SplashScreen(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Vision Assist',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Vision Assist'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
   final String title;
 
   @override
@@ -47,23 +50,40 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: _pages[selectedIndex],
-        bottomNavigationBar: NavigationBar(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: _pages[selectedIndex],
+        ),
+      ),
+      bottomNavigationBar: NavigationBarTheme(
+        data: NavigationBarThemeData(
+          height: 75,
+          backgroundColor: Colors.deepPurple[50],
+          indicatorColor: Colors.deepPurple[200],
+          labelTextStyle: MaterialStateProperty.all(
+            const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          iconTheme: MaterialStateProperty.all(
+            const IconThemeData(size: 28),
+          ),
+        ),
+        child: NavigationBar(
           onDestinationSelected: (int index) {
             setState(() {
               selectedIndex = index;
             });
           },
-          indicatorColor: const Color.fromARGB(255, 92, 160, 249),
           selectedIndex: selectedIndex,
-          destinations: const <Widget>[
+          destinations: const <NavigationDestination>[
             NavigationDestination(
               icon: Icon(Icons.document_scanner_outlined),
-              label: 'Object Detection',
+              label: 'Objects',
             ),
             NavigationDestination(
               icon: Icon(Icons.font_download),
-              label: 'Text to Speech',
+              label: 'TTS',
             ),
             NavigationDestination(
               icon: Icon(Icons.map_outlined),
@@ -74,6 +94,8 @@ class _MyHomePageState extends State<MyHomePage> {
               label: 'Alarm',
             ),
           ],
-        ));
+        ),
+      ),
+    );
   }
 }

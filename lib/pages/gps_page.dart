@@ -19,7 +19,7 @@ class _GPSPageState extends State<GPSPage> {
   LatLng? _selectedDestination;
   bool _isLoading = true;
   bool _showNavigationButton = false;
-  String _errorMessage = ''; // Add error message state
+  String _errorMessage = '';
   List<Map<String, dynamic>> _directions = [];
 
   @override
@@ -29,19 +29,14 @@ class _GPSPageState extends State<GPSPage> {
   }
 
   Future<void> _checkAndRequestLocationPermission() async {
-    // Check permission status using permission_handler
     var status = await Permission.locationWhenInUse.status;
-
     if (status.isDenied || status.isPermanentlyDenied) {
-      // Request permission
       status = await Permission.locationWhenInUse.request();
     }
 
     if (status.isGranted) {
-      // Permission granted, proceed to get current location
       _getCurrentLocation();
     } else {
-      // Handle permission denied
       _handleLocationPermissionDenied();
     }
   }
@@ -49,21 +44,20 @@ class _GPSPageState extends State<GPSPage> {
   void _handleLocationPermissionDenied() {
     setState(() {
       _isLoading = false;
-      _errorMessage =
-          'Location permission is required to use this feature.'; // Set error message
+      _errorMessage = 'Location permission is required to use this feature.';
     });
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Location Access Needed'),
-        content: Text(
+        content: const Text(
             'This app requires location access to provide navigation services. Please enable location permissions in your device settings.'),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              openAppSettings(); // Opens app settings
+              openAppSettings();
             },
             child: const Text('Open Settings'),
           ),
@@ -79,30 +73,26 @@ class _GPSPageState extends State<GPSPage> {
   Future<void> _getCurrentLocation() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = ''; // Clear any previous error
+      _errorMessage = '';
     });
     try {
-      // Ensure location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         await Geolocator.openLocationSettings();
         return;
       }
 
-      // Request precise location permissions
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
 
       if (permission == LocationPermission.deniedForever) {
-        // Permissions are denied forever, handle appropriately
         return _handleLocationPermissionDenied();
       }
 
       if (permission == LocationPermission.whileInUse ||
           permission == LocationPermission.always) {
-        // Retrieve current position with iOS-specific accuracy
         Position position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.bestForNavigation,
           timeLimit: const Duration(seconds: 10),
@@ -116,8 +106,7 @@ class _GPSPageState extends State<GPSPage> {
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage =
-            'Failed to retrieve current location: $e'; // Set error message
+        _errorMessage = 'Failed to retrieve current location: $e';
       });
       _showErrorDialog('Failed to retrieve current location: $e');
     }
@@ -125,28 +114,25 @@ class _GPSPageState extends State<GPSPage> {
 
   Future<void> _searchLocation(String query) async {
     if (query.isEmpty) return;
-
     if (_currentPosition == null) {
       _showErrorDialog('Current location is not available.');
       return;
     }
 
     setState(() {
-      _isLoading = true; // Start loading
+      _isLoading = true;
       _errorMessage = '';
     });
 
     try {
       LatLng currentLatLng =
           LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
-
-      // Call API to search for places
       final results = await ApiService.searchPlaces(query, currentLatLng);
 
       setState(() {
-        _markers.clear(); // Clear previous markers
-        _polylines.clear(); // Clear any existing route lines
-        results.forEach((latLng) {
+        _markers.clear();
+        _polylines.clear();
+        for (var latLng in results) {
           _markers.add(
             Marker(
               markerId: MarkerId(latLng.toString()),
@@ -154,19 +140,15 @@ class _GPSPageState extends State<GPSPage> {
               infoWindow: InfoWindow(title: query),
               onTap: () {
                 setState(() {
-                  _selectedDestination =
-                      latLng; // Update selected destination
-                  _showNavigationButton =
-                      true; // Show the navigation button after a selection
+                  _selectedDestination = latLng;
+                  _showNavigationButton = true;
                 });
               },
             ),
           );
-        });
-        _selectedDestination =
-            null; // Clear destination if new search
-        _isLoading =
-            false; // Stop loading whether results are found or not.
+        }
+        _selectedDestination = null;
+        _isLoading = false;
       });
 
       if (results.isNotEmpty) {
@@ -195,18 +177,14 @@ class _GPSPageState extends State<GPSPage> {
       _isLoading = true;
       _errorMessage = '';
     });
+
     try {
       LatLng origin =
           LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
       LatLng destination = _selectedDestination!;
-
-      // Call API to get directions
       _directions = await ApiService.getWalkingDirections(origin, destination);
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
 
-      // Navigate to the NavigationScreen and pass the directions
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -226,135 +204,118 @@ class _GPSPageState extends State<GPSPage> {
     }
   }
 
-  LatLngBounds _getLatLngBounds(LatLng origin, LatLng destination) {
-    return LatLngBounds(
-      southwest: LatLng(
-        origin.latitude < destination.latitude
-            ? origin.latitude
-            : destination.latitude,
-        origin.longitude < destination.longitude
-            ? origin.longitude
-            : destination.longitude,
-      ),
-      northeast: LatLng(
-        origin.latitude > destination.latitude
-            ? origin.latitude
-            : destination.latitude,
-        origin.longitude > destination.longitude
-            ? origin.longitude
-            : destination.longitude,
-      ),
-    );
-  }
-
   void _showErrorDialog(String message) {
-    if (mounted) {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Error'),
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    if (_currentPosition == null) {
-      return Scaffold(
-        body: Center(
-          child: Text(_errorMessage.isNotEmpty
-              ? _errorMessage
-              : 'Unable to retrieve location'),
-        ),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('GPS Navigation'),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(20.0),
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 8.0),
-            child: Text(
-              'Use the search bar below to find locations.',
-              style: TextStyle(color: Colors.white, fontSize: 14.0),
-            ),
-          ),
-        ),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: "Search for a location",
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              onSubmitted: (value) {
-                _searchLocation(value);
-              },
-            ),
-          ),
-          // Display "Start Navigation" button only if destination is selected
-          if (_showNavigationButton && _selectedDestination != null)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  _getWalkingDirections();
-                },
-                icon: const Icon(Icons.directions_walk),
-                label: const Text('Start Navigation'),
-              ),
-            ),
-          Expanded(
-            child: GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: LatLng(
-                  _currentPosition!.latitude,
-                  _currentPosition!.longitude,
-                ),
-                zoom: 15,
-              ),
-              mapType: MapType.normal,
-              myLocationEnabled: true,
-              myLocationButtonEnabled: true,
-              markers: _markers,
-              polylines: _polylines,
-              onMapCreated: (GoogleMapController controller) {
-                _mapController = controller;
-              },
-            ),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
           ),
         ],
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _isLoading
+        ? const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          )
+        : _currentPosition == null
+            ? Scaffold(
+                body: Center(
+                  child: Text(_errorMessage.isNotEmpty
+                      ? _errorMessage
+                      : 'Unable to retrieve location'),
+                ),
+              )
+            : Scaffold(
+                appBar: PreferredSize(
+                  preferredSize: const Size.fromHeight(70),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(24),
+                    ),
+                    child: AppBar(
+                      title: const Text(
+                        'GPS Navigation',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      centerTitle: true,
+                      backgroundColor: Colors.deepPurple,
+                      elevation: 4,
+                    ),
+                  ),
+                ),
+                body: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: TextField(
+                        controller: _searchController,
+                        style: const TextStyle(fontSize: 16),
+                        decoration: InputDecoration(
+                          hintText: "Search for a location",
+                          hintStyle: const TextStyle(color: Colors.grey),
+                          prefixIcon: const Icon(Icons.search),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        onSubmitted: _searchLocation,
+                      ),
+                    ),
+                    if (_showNavigationButton && _selectedDestination != null)
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ElevatedButton.icon(
+                          onPressed: _getWalkingDirections,
+                          icon: const Icon(Icons.directions_walk),
+                          label: const Text('Start Navigation'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 32, vertical: 14),
+                            textStyle: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w600),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                          ),
+                        ),
+                      ),
+                    Expanded(
+                      child: GoogleMap(
+                        initialCameraPosition: CameraPosition(
+                          target: LatLng(
+                            _currentPosition!.latitude,
+                            _currentPosition!.longitude,
+                          ),
+                          zoom: 15,
+                        ),
+                        mapType: MapType.normal,
+                        myLocationEnabled: true,
+                        myLocationButtonEnabled: true,
+                        markers: _markers,
+                        polylines: _polylines,
+                        onMapCreated: (controller) =>
+                            _mapController = controller,
+                      ),
+                    ),
+                  ],
+                ),
+              );
   }
 }
