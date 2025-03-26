@@ -31,7 +31,7 @@ class _SplashScreenState extends State<SplashScreen> {
     return GestureDetector(
       onTap: _onTap,
       child: Scaffold(
-        backgroundColor: Colors.deepPurple[700],
+        backgroundColor: const Color.fromARGB(255, 109, 94, 144),
         body: Stack(
           children: [
             Center(
@@ -72,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen> {
               bottom: 0,
               child: Container(
                 width: screenWidth / 2,
-                color: Colors.deepPurple[900],
+                color: const Color.fromARGB(255, 81, 66, 145),
               ),
             ),
 
@@ -85,7 +85,7 @@ class _SplashScreenState extends State<SplashScreen> {
               bottom: 0,
               child: Container(
                 width: screenWidth / 2,
-                color: Colors.deepPurple[900],
+                color: const Color.fromARGB(255, 81, 66, 145),
               ),
             ),
           ],

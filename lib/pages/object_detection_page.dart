@@ -53,7 +53,6 @@ class _ObjectDetectionPageState extends State<ObjectDetectionPage> {
     await _cameraController!.initialize();
     if (!mounted) return;
     setState(() {});
-
     _cameraController!.startImageStream(_processCameraImage);
   }
 
@@ -143,28 +142,71 @@ class _ObjectDetectionPageState extends State<ObjectDetectionPage> {
               left: 0,
               right: 0,
               child: Container(
-                color: Colors.black54,
-                height: 200,
-                child: ListView.builder(
-                  itemCount: _detectedObjects.length,
-                  itemBuilder: (context, index) {
-                    final obj = _detectedObjects[index];
-                    final label = obj.labels.isNotEmpty
-                        ? obj.labels.first.text
-                        : 'Unknown';
-                    final confidence = obj.labels.isNotEmpty
-                        ? obj.labels.first.confidence.toStringAsFixed(2)
-                        : 'N/A';
-                    return ListTile(
-                      title: Text('Object: $label',
-                          style: TextStyle(color: Colors.white)),
-                      subtitle: Text('Confidence: $confidence',
-                          style: TextStyle(color: Colors.white70)),
-                    );
-                  },
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 8,
+                      offset: Offset(0, -2),
+                    ),
+                  ],
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
+                ),
+                padding: const EdgeInsets.all(16),
+                height: 220,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Detected Objects",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: _detectedObjects.length,
+                        itemBuilder: (context, index) {
+                          final obj = _detectedObjects[index];
+                          final label = obj.labels.isNotEmpty
+                              ? obj.labels.first.text
+                              : 'Unknown';
+                          final confidence = obj.labels.isNotEmpty
+                              ? obj.labels.first.confidence.toStringAsFixed(2)
+                              : 'N/A';
+                          return ListTile(
+                            dense: true,
+                            visualDensity: const VisualDensity(
+                                vertical: -2, horizontal: -4),
+                            leading: const Icon(Icons.label_outline,
+                                color: Colors.deepPurple),
+                            title: Text(
+                              label,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Confidence: $confidence',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            )
+            ),
         ],
       ),
     );
