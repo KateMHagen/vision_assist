@@ -83,17 +83,21 @@ class _EmergencyAlarmPageState extends State<EmergencyAlarmPage> {
       "🚨 Emergency! I need help.$locationUrl",
     );
 
-    // Group SMS with both numbers (comma-separated)
-    String recipients = contacts.join(',');
+    for (int i = 0; i < contacts.length; i++) {
+      final uri = Uri.parse("sms:${contacts[i]}?body=$message");
 
-    final uri = Uri.parse("sms:$recipients?body=$message");
-
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Could not launch SMS app.")),
-      );
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+        // Wait for user to come back to the app
+        if (i == 0 && contacts.length > 1) {
+          await _flutterTts.speak("Sending alert to second contact.");
+          await Future.delayed(const Duration(seconds: 5));
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Could not launch SMS for ${contacts[i]}.")),
+        );
+      }
     }
   }
 
