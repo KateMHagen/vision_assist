@@ -54,7 +54,6 @@ class _NavigationScreenState extends State<NavigationScreen> {
       });
       _updateMapCamera();
     } catch (e) {
-      print("Error getting location: $e");
       setState(() => _isLoading = false);
     }
     _positionStreamSubscription = Geolocator.getPositionStream(
@@ -138,85 +137,71 @@ class _NavigationScreenState extends State<NavigationScreen> {
       );
     }
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Navigation'),
-        backgroundColor: Colors.deepPurple,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70),
+        child: ClipRRect(
+          borderRadius:
+              const BorderRadius.vertical(bottom: Radius.circular(24)),
+          child: AppBar(
+            title: const Text(
+              'GPS Navigation',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+            centerTitle: true,
+            backgroundColor: Colors.deepPurple,
+            elevation: 4,
+          ),
+        ),
       ),
       body: Column(
         children: [
           Expanded(
-            flex: 2,
-            child: ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(bottom: Radius.circular(20)),
-              child: GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: LatLng(
-                    _currentPosition!.latitude,
-                    _currentPosition!.longitude,
-                  ),
-                  zoom: 17,
+            child: GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: LatLng(
+                  _currentPosition!.latitude,
+                  _currentPosition!.longitude,
                 ),
-                mapType: MapType.normal,
-                myLocationEnabled: true,
-                myLocationButtonEnabled: false,
-                polylines: _buildPolylines(),
-                onMapCreated: (GoogleMapController controller) {
-                  _mapController = controller;
-                },
+                zoom: 17,
               ),
+              mapType: MapType.normal,
+              myLocationEnabled: true,
+              myLocationButtonEnabled: false,
+              polylines: _polylines,
+              onMapCreated: (GoogleMapController controller) {
+                _mapController = controller;
+              },
             ),
           ),
-          const SizedBox(height: 8),
-          Expanded(
-            flex: 1,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: _buildDirectionsList(),
-            ),
-          ),
+          _buildDirectionsList(),
         ],
       ),
     );
   }
 
-  Set<Polyline> _buildPolylines() {
-    List<LatLng> allPoints = [];
-    for (var direction in widget.directions) {
-      List<LatLng> polyline = direction['polyline']?.cast<LatLng>() ?? [];
-      allPoints.addAll(polyline);
-    }
-
-    if (allPoints.isEmpty) return {};
-
-    return {
-      Polyline(
-        polylineId: const PolylineId('route'),
-        color: Colors.blue,
-        width: 5,
-        points: allPoints,
-      ),
-    };
-  }
-
   Widget _buildDirectionsList() {
-    return ListView.builder(
-      itemCount: widget.directions.length,
-      itemBuilder: (context, index) {
-        final direction = widget.directions[index];
-        return ListTile(
-          leading: _getManeuverIcon(direction['maneuver']),
-          title: Text(
-            direction['instruction'].replaceAll(RegExp(r'<[^>]*>'), ''),
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          subtitle: Text('${direction['distance']} • ${direction['duration']}'),
-        );
-      },
+    return Container(
+      height: 200,
+      padding: const EdgeInsets.all(8.0),
+      child: ListView.builder(
+        itemCount: widget.directions.length,
+        itemBuilder: (context, index) {
+          final direction = widget.directions[index];
+          return ListTile(
+            leading: _getManeuverIcon(direction['maneuver']),
+            title: Text(
+              direction['instruction'].replaceAll(RegExp(r'<[^>]*>'), ''),
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            subtitle:
+                Text('${direction['distance']} • ${direction['duration']}'),
+          );
+        },
+      ),
     );
   }
 
