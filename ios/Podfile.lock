@@ -29,9 +29,9 @@ PODS:
   - GoogleDataTransport (10.1.0):
     - nanopb (~> 3.30910.0)
     - PromisesObjC (~> 2.4)
-  - GoogleMaps (9.3.0):
-    - GoogleMaps/Maps (= 9.3.0)
-  - GoogleMaps/Maps (9.3.0)
+  - GoogleMaps (9.4.0):
+    - GoogleMaps/Maps (= 9.4.0)
+  - GoogleMaps/Maps (9.4.0)
   - GoogleMLKit/ImageLabeling (7.0.0):
     - GoogleMLKit/MLKitCore
     - MLKitImageLabeling (~> 6.0.0)
@@ -197,7 +197,7 @@ SPEC CHECKSUMS:
   google_mlkit_image_labeling: e01dfa7cf050b00f8db79e37ae385c0f4ea82de6
   google_mlkit_text_recognition: d70cc1ed5064db39fce44d77b2c5449adc39a13d
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
-  GoogleMaps: b58e9627004f47043897eeae830c3ef023678f3b
+  GoogleMaps: 0608099d4870cac8754bdba9b6953db543432438
   GoogleMLKit: eff9e23ec1d90ea4157a1ee2e32a4f610c5b3318
   GooglePlaces: 8afca6c4e946472e91298589d1640d614b51749a
   GoogleToolboxForMac: d1a2cbf009c453f4d6ded37c105e2f67a32206d8

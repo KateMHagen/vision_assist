@@ -30,7 +30,15 @@ class _ObjectClassificationPageState extends State<ObjectClassificationPage> {
   void initState() {
     super.initState();
     _initializeCamera();
+    _initializeTTS();
     _imageLabeler = ImageLabeler(options: ImageLabelerOptions());
+  }
+
+  Future<void> _initializeTTS() async {
+    await _flutterTts.setLanguage('en-US');
+    await _flutterTts.setSpeechRate(0.35); // slower
+    await _flutterTts.setPitch(1.0);
+    await _flutterTts.setVolume(1.0);
   }
 
   Future<void> _initializeCamera() async {
@@ -49,7 +57,6 @@ class _ObjectClassificationPageState extends State<ObjectClassificationPage> {
     await _cameraController!.initialize();
     if (!mounted) return;
     setState(() {});
-
     _cameraController!.startImageStream(_processCameraImage);
   }
 
@@ -85,13 +92,14 @@ class _ObjectClassificationPageState extends State<ObjectClassificationPage> {
       );
 
       final labels = await _imageLabeler.processImage(inputImage);
+      final filteredLabels = labels.where((l) => l.confidence > 0.75).toList();
 
       setState(() {
-        _labels = labels;
+        _labels = filteredLabels;
       });
 
-      if (labels.isNotEmpty) {
-        final label = labels.first.label;
+      if (filteredLabels.isNotEmpty) {
+        final label = filteredLabels.first.label;
 
         if (label != _lastSpokenLabel ||
             DateTime.now().difference(_lastSpokenTime).inSeconds > 2) {
