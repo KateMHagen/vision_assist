@@ -368,21 +368,43 @@ class _GPSPageState extends State<GPSPage> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: TextField(
-                        controller: _searchController,
-                        style: const TextStyle(fontSize: 16),
-                        decoration: InputDecoration(
-                          hintText: "Search for a location",
-                          hintStyle: const TextStyle(color: Colors.grey),
-                          prefixIcon: const Icon(Icons.search),
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
+                      child: Row(
+                        children: [
+                          // Search Bar
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              style: const TextStyle(fontSize: 16),
+                              decoration: InputDecoration(
+                                hintText: "Search for a location",
+                                hintStyle: const TextStyle(color: Colors.grey),
+                                prefixIcon: const Icon(Icons.search),
+                                filled: true,
+                                fillColor: Colors.white,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                              onSubmitted: _searchLocation,
+                            ),
                           ),
-                        ),
-                        onSubmitted: _searchLocation,
+                          const SizedBox(width: 8), // Adds spacing between input field and button
+
+                          // Submit Button
+                          ElevatedButton(
+                            onPressed: () {
+                              _searchLocation(_searchController.text); // Call search function
+                            },
+                            style: ElevatedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12), // Rounded corners
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                            ),
+                            child: const Icon(Icons.arrow_forward), // Submit Icon
+                          ),
+                        ],
                       ),
                     ),
                     if (_showNavigationButton && _selectedDestination != null)
