@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:vision_assist/services/api_service.dart';
 import 'navigation_page.dart';
+import 'package:custom_info_window/custom_info_window.dart';
 
 class GPSPage extends StatefulWidget {
   @override
@@ -21,6 +22,7 @@ class _GPSPageState extends State<GPSPage> {
   bool _showNavigationButton = false;
   String _errorMessage = '';
   List<Map<String, dynamic>> _directions = [];
+  final CustomInfoWindowController _customInfoWindowController = CustomInfoWindowController();
 
   @override
   void initState() {
@@ -132,23 +134,52 @@ class _GPSPageState extends State<GPSPage> {
       setState(() {
         _markers.clear();
         _polylines.clear();
+        _selectedDestination = null;
+        _isLoading = false;
+
         for (var latLng in results) {
           _markers.add(
             Marker(
               markerId: MarkerId(latLng.toString()),
               position: latLng,
-              infoWindow: InfoWindow(title: query),
               onTap: () {
                 setState(() {
                   _selectedDestination = latLng;
                   _showNavigationButton = true;
                 });
+
+                _customInfoWindowController.addInfoWindow!(
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          query,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                  latLng,
+                );
               },
             ),
           );
         }
-        _selectedDestination = null;
-        _isLoading = false;
       });
 
       if (results.isNotEmpty) {
@@ -166,6 +197,7 @@ class _GPSPageState extends State<GPSPage> {
       _showErrorDialog("Error searching for location: $e");
     }
   }
+
 
   Future<void> _getWalkingDirections() async {
     if (_currentPosition == null || _selectedDestination == null) {
@@ -296,26 +328,44 @@ class _GPSPageState extends State<GPSPage> {
                           ),
                         ),
                       ),
-                    Expanded(
-                      child: GoogleMap(
-                        initialCameraPosition: CameraPosition(
-                          target: LatLng(
-                            _currentPosition!.latitude,
-                            _currentPosition!.longitude,
-                          ),
-                          zoom: 15,
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            GoogleMap(
+                              initialCameraPosition: CameraPosition(
+                                target: LatLng(
+                                  _currentPosition!.latitude,
+                                  _currentPosition!.longitude,
+                                ),
+                                zoom: 15,
+                              ),
+                              mapType: MapType.normal,
+                              myLocationEnabled: true,
+                              myLocationButtonEnabled: true,
+                              markers: _markers,
+                              polylines: _polylines,
+                              onMapCreated: (controller) {
+                                _mapController = controller;
+                                _customInfoWindowController.googleMapController = controller;
+                              },
+                              onTap: (position) {
+                                _customInfoWindowController.hideInfoWindow!();
+                              },
+                              onCameraMove: (position) {
+                                _customInfoWindowController.onCameraMove!();
+                              },
+                            ),
+                            CustomInfoWindow(
+                              controller: _customInfoWindowController,
+                              height: 60,
+                              width: 120,
+                              offset: 70,
+                            ),
+                          ],
                         ),
-                        mapType: MapType.normal,
-                        myLocationEnabled: true,
-                        myLocationButtonEnabled: true,
-                        markers: _markers,
-                        polylines: _polylines,
-                        onMapCreated: (controller) =>
-                            _mapController = controller,
                       ),
-                    ),
-                  ],
-                ),
-              );
+                    ],
+                  ),
+                );
   }
 }
