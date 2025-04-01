@@ -1,11 +1,30 @@
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
+import 'package:flutter/material.dart';
 
 class ApiService {
-  static const String kGooglePlacesApiKey =
-      'AIzaSyAbxrh2JQja5pH05lidjgq5ZHfDFW8ZiZM'; // Replace with your actual API key
+  static const String kGooglePlacesApiKey = 'AIzaSyAbxrh2JQja5pH05lidjgq5ZHfDFW8ZiZM';
+  final String apiKey;
+  final FlutterTts flutterTts = FlutterTts();
+  bool _isSpeaking = false;
 
+  ApiService({required this.apiKey}) {
+    _initializeTts();
+  }
+
+  Future<void> _initializeTts() async {
+    await flutterTts.setLanguage("en-US");
+    await flutterTts.setSpeechRate(0.5);
+    await flutterTts.setVolume(1.0);
+    await flutterTts.setPitch(1.0);
+    
+    flutterTts.setCompletionHandler(() {
+      _isSpeaking = false;
+    });
+  }
   // Helper function to decode the polyline points
   static List<LatLng> _decodePolyline(String polyline) {
     List<LatLng> polylineCoordinates = [];
@@ -87,4 +106,100 @@ class ApiService {
       throw Exception('Failed to load places');
     }
   }
+  Future<void> announceDirection(Map<String, dynamic> direction) async {
+    if (_isSpeaking) {
+      await flutterTts.stop();
+    }
+    
+    // Clean up HTML tags from instructions
+    String cleanInstruction = direction['instruction'].replaceAll(RegExp(r'<[^>]*>'), '');
+    
+    // Create a more natural speech pattern by adding distance information
+    String speechText = "$cleanInstruction in ${direction['distance']}";
+    
+    _isSpeaking = true;
+    await flutterTts.speak(speechText);
+  }
+  
+  Future<void> announceNextDirection(Map<String, dynamic> direction, double distanceInMeters) async {
+    // Only announce when we're close to the next maneuver
+    if (distanceInMeters <= 50 && distanceInMeters > 20) {
+      if (_isSpeaking) {
+        await flutterTts.stop();
+      }
+      
+      // Clean up HTML tags from instructions
+      String cleanInstruction = direction['instruction'].replaceAll(RegExp(r'<[^>]*>'), '');
+      
+      // Create an immediate instruction
+      String speechText = "In ${distanceInMeters.toInt()} meters, $cleanInstruction";
+      
+      _isSpeaking = true;
+      await flutterTts.speak(speechText);
+    }
+    else if (distanceInMeters <= 20) {
+      if (_isSpeaking) {
+        await flutterTts.stop();
+      }
+      
+      // Clean up HTML tags from instructions
+      String cleanInstruction = direction['instruction'].replaceAll(RegExp(r'<[^>]*>'), '');
+      
+      // Create an immediate instruction
+      String speechText = "Now $cleanInstruction";
+      
+      _isSpeaking = true;
+      await flutterTts.speak(speechText);
+    }
+  }
+  
+  Future<void> announceArrival() async {
+    if (_isSpeaking) {
+      await flutterTts.stop();
+    }
+    
+    _isSpeaking = true;
+    await flutterTts.speak("You have arrived at your destination");
+  }
+  
+  Future<void> announceDestinationDistance(double distanceInMeters) async {
+    if (_isSpeaking || distanceInMeters > 200) {
+      return;
+    }
+    
+    _isSpeaking = true;
+    await flutterTts.speak("Your destination is ${distanceInMeters.toInt()} meters ahead");
+  }
+  
+  // Prepare for voice recognition (to be implemented)
+  Future<void> setupVoiceRecognition() async {
+    // This would be implemented if you want to add voice command recognition
+    // You'll need another package like speech_to_text for this functionality
+  }
+  
+  Future<void> stopSpeaking() async {
+    if (_isSpeaking) {
+      await flutterTts.stop();
+      _isSpeaking = false;
+    }
+  }
+  
+  // Check if TTS is currently speaking
+  bool isCurrentlySpeaking() {
+    return _isSpeaking;
+  }
+  
+  // Change TTS settings
+  Future<void> updateTtsSettings({
+    double? rate,
+    double? pitch,
+    double? volume,
+    String? language,
+  }) async {
+    if (rate != null) await flutterTts.setSpeechRate(rate);
+    if (pitch != null) await flutterTts.setPitch(pitch);
+    if (volume != null) await flutterTts.setVolume(volume);
+    if (language != null) await flutterTts.setLanguage(language);
+  }
 }
+

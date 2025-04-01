@@ -12,6 +12,7 @@ class GPSPage extends StatefulWidget {
 }
 
 class _GPSPageState extends State<GPSPage> {
+  late ApiService _apiService;
   GoogleMapController? _mapController;
   Position? _currentPosition;
   final TextEditingController _searchController = TextEditingController();
@@ -27,6 +28,7 @@ class _GPSPageState extends State<GPSPage> {
   @override
   void initState() {
     super.initState();
+    _apiService = ApiService(apiKey: ApiService.kGooglePlacesApiKey); // Correct placement
     _checkAndRequestLocationPermission();
   }
 
@@ -211,30 +213,36 @@ class _GPSPageState extends State<GPSPage> {
     });
 
     try {
-      LatLng origin =
-          LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
-      LatLng destination = _selectedDestination!;
-      _directions = await ApiService.getWalkingDirections(origin, destination);
-      setState(() => _isLoading = false);
+        LatLng origin = LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
+        LatLng destination = _selectedDestination!;
+        _directions = await ApiService.getWalkingDirections(origin, destination);
+        
+        // Announce the first direction if available
+        if (_directions.isNotEmpty) {
+          await _apiService.announceDirection(_directions.first);
+        }
+        
+        setState(() => _isLoading = false);
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => NavigationScreen(
-            directions: _directions,
-            origin: origin,
-            destination: destination,
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NavigationScreen(
+              directions: _directions,
+              origin: origin,
+              destination: destination,
+              apiService: _apiService, // Pass the apiService to NavigationScreen
+            ),
           ),
-        ),
-      );
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = "Error retrieving directions: $e";
-      });
-      _showErrorDialog("Error retrieving directions: $e");
+        );
+      } catch (e) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = "Error retrieving directions: $e";
+        });
+        _showErrorDialog("Error retrieving directions: $e");
+      }
     }
-  }
 
   void _showErrorDialog(String message) {
     showDialog(
@@ -246,6 +254,74 @@ class _GPSPageState extends State<GPSPage> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+  void _showTtsSettingsDialog() {
+    double rate = 0.5;
+    double pitch = 1.0;
+    double volume = 1.0;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Voice Navigation Settings'),
+        content: StatefulBuilder(
+          builder: (context, setState) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Speech Rate: ${rate.toStringAsFixed(1)}'),
+                Slider(
+                  value: rate,
+                  min: 0.1,
+                  max: 1.0,
+                  divisions: 9,
+                  onChanged: (value) {
+                    setState(() => rate = value);
+                  },
+                ),
+                Text('Pitch: ${pitch.toStringAsFixed(1)}'),
+                Slider(
+                  value: pitch,
+                  min: 0.5,
+                  max: 2.0,
+                  divisions: 15,
+                  onChanged: (value) {
+                    setState(() => pitch = value);
+                  },
+                ),
+                Text('Volume: ${volume.toStringAsFixed(1)}'),
+                Slider(
+                  value: volume,
+                  min: 0.1,
+                  max: 1.0,
+                  divisions: 9,
+                  onChanged: (value) {
+                    setState(() => volume = value);
+                  },
+                ),
+              ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              _apiService.updateTtsSettings(
+                rate: rate,
+                pitch: pitch,
+                volume: volume,
+              );
+              Navigator.of(context).pop();
+            },
+            child: const Text('Apply'),
           ),
         ],
       ),

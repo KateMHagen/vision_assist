@@ -4,17 +4,20 @@ import 'package:geolocator/geolocator.dart';
 import 'dart:math' as math;
 import 'dart:async';
 import 'package:flutter_compass/flutter_compass.dart';
+import 'package:vision_assist/services/api_service.dart';
 
 class NavigationScreen extends StatefulWidget {
   final List<Map<String, dynamic>> directions;
   final LatLng origin;
   final LatLng destination;
+  final ApiService apiService; // Add this line
 
   const NavigationScreen({
     Key? key,
     required this.directions,
     required this.origin,
     required this.destination,
+    required this.apiService,
   }) : super(key: key);
 
   @override
@@ -22,13 +25,17 @@ class NavigationScreen extends StatefulWidget {
 }
 
 class _NavigationScreenState extends State<NavigationScreen> {
-  GoogleMapController? _mapController;
+  late GoogleMapController? _mapController;
   final Set<Polyline> _polylines = {};
   Position? _currentPosition;
   double _currentHeading = 0.0;
   bool _isLoading = true;
   late StreamSubscription<Position> _positionStreamSubscription;
   StreamSubscription<CompassEvent>? _compassSubscription;
+  int _currentStepIndex = 0;
+  double _distanceToNextStep = 0;
+  bool _arrived = false;
+
 
   @override
   void initState() {
@@ -36,13 +43,93 @@ class _NavigationScreenState extends State<NavigationScreen> {
     _getCurrentLocation();
     _startListeningToCompass();
     _updatePolylines();
+    _startLocationTracking();
   }
 
   @override
   void dispose() {
     _positionStreamSubscription.cancel();
     _compassSubscription?.cancel();
+    widget.apiService.stopSpeaking();
+    //_mapController.dispose();
     super.dispose();
+  }
+
+  void _startLocationTracking() {
+    _positionStreamSubscription = Geolocator.getPositionStream(
+      locationSettings: AndroidSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 5, // Update every 5 meters
+      ),
+    ).listen((Position position) {
+      setState(() {
+        _currentPosition = position;
+      });
+      
+      _updateNavigation(position);
+    });
+  }
+
+  void _updateNavigation(Position position) {
+    if (_currentStepIndex >= widget.directions.length) {
+      return;
+    }
+
+    // Check if we've reached the destination
+    LatLng currentLatLng = LatLng(position.latitude, position.longitude);
+    double distanceToDestination = Geolocator.distanceBetween(
+      position.latitude,
+      position.longitude,
+      widget.destination.latitude,
+      widget.destination.longitude,
+    );
+
+    // If we've reached the destination
+    if (distanceToDestination < 20 && !_arrived) {
+      widget.apiService.announceArrival();
+      setState(() {
+        _arrived = true;
+      });
+      return;
+    }
+
+    // Periodically announce destination distance when getting close
+    if (distanceToDestination < 200) {
+      widget.apiService.announceDestinationDistance(distanceToDestination);
+    }
+
+    // Check if we need to move to the next step
+    if (_currentStepIndex < widget.directions.length - 1) {
+      List<LatLng> nextStepPolyline = widget.directions[_currentStepIndex + 1]['polyline'];
+      
+      if (nextStepPolyline.isNotEmpty) {
+        LatLng nextManeuverPoint = nextStepPolyline.first;
+        double distanceToNextManeuver = Geolocator.distanceBetween(
+          position.latitude,
+          position.longitude,
+          nextManeuverPoint.latitude,
+          nextManeuverPoint.longitude,
+        );
+        
+        setState(() {
+          _distanceToNextStep = distanceToNextManeuver;
+        });
+        
+        // Announce upcoming maneuver based on distance
+        widget.apiService.announceNextDirection(
+          widget.directions[_currentStepIndex + 1], 
+          distanceToNextManeuver
+        );
+        
+        // Move to next step if we're very close to it
+        if (distanceToNextManeuver < 10) {
+          setState(() {
+            _currentStepIndex++;
+          });
+          widget.apiService.announceDirection(widget.directions[_currentStepIndex]);
+        }
+      }
+    }
   }
 
   Future<void> _getCurrentLocation() async {
@@ -136,7 +223,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
       _polylines.addAll(_buildPolylines());
     });
   }
-  
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
