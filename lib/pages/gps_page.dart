@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:vision_assist/services/api_service.dart';
 import 'navigation_page.dart';
 import 'package:custom_info_window/custom_info_window.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class GPSPage extends StatefulWidget {
   @override
@@ -24,6 +25,8 @@ class _GPSPageState extends State<GPSPage> {
   String _errorMessage = '';
   List<Map<String, dynamic>> _directions = [];
   final CustomInfoWindowController _customInfoWindowController = CustomInfoWindowController();
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
 
   @override
   void initState() {
@@ -31,7 +34,28 @@ class _GPSPageState extends State<GPSPage> {
     _apiService = ApiService(apiKey: ApiService.kGooglePlacesApiKey); // Correct placement
     _checkAndRequestLocationPermission();
   }
+  void _startListening() async {
+      bool available = await _speech.initialize(
+        onStatus: (status) => print('Status: $status'),
+        onError: (error) => print('Error: $error'),
+      );
 
+      if (available) {
+        setState(() => _isListening = true);
+        _speech.listen(
+          onResult: (result) {
+            setState(() {
+              _searchController.text = result.recognizedWords;
+            });
+          },
+        );
+      }
+    }
+
+  void _stopListening() {
+    _speech.stop();
+    setState(() => _isListening = false);
+  }
   Future<void> _checkAndRequestLocationPermission() async {
     var status = await Permission.locationWhenInUse.status;
     if (status.isDenied || status.isPermanentlyDenied) {
@@ -379,6 +403,16 @@ class _GPSPageState extends State<GPSPage> {
                                 hintText: "Search for a location",
                                 hintStyle: const TextStyle(color: Colors.grey),
                                 prefixIcon: const Icon(Icons.search),
+                                suffixIcon: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Microphone Button
+                                    IconButton(
+                                      icon: Icon(_isListening ? Icons.mic_off : Icons.mic, color: _isListening ? Colors.red : Colors.black),
+                                      onPressed: _isListening ? _stopListening : _startListening,
+                                    ),
+                                  ],
+                                ),
                                 filled: true,
                                 fillColor: Colors.white,
                                 border: OutlineInputBorder(

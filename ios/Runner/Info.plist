@@ -40,6 +40,10 @@
 	<string>We need access to your photo library to select images for OCR.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs your location to include in emergency alerts.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>We need access to speech recognition for voice search</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We need microphone access for voice search</string>
 
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>

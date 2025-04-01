@@ -28,6 +28,7 @@ dependencies:
   shared_preferences: ^2.2.2
   url_launcher: ^6.2.4
   custom_info_window: ^1.0.1
+  speech_to_text: ^6.1.1
 
 dev_dependencies:
   flutter_test:
